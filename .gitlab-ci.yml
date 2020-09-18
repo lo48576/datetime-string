@@ -69,6 +69,18 @@ test:msrv:all-features-minimal-versions:
     FEATURES: --all-features
     USE_MINIMAL_VERSIONS: 1
 
+test:msrv:no-default-features:
+  <<: *test_msrv
+  variables:
+    RUST_VERSION: $MSRV
+    FEATURES: --no-default-features
+
+test:msrv:alloc:
+  <<: *test_msrv
+  variables:
+    RUST_VERSION: $MSRV
+    FEATURES: --no-default-features --features=alloc
+
 test:stable:default-features: &test_stable
   <<: *test
 
