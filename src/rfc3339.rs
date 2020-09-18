@@ -8,7 +8,7 @@ use core::fmt;
 
 use crate::datetime::DateError;
 
-pub use self::full_date::FullDateStr;
+pub use self::full_date::{FullDateStr, FullDateString};
 
 /// Component kind.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -16,6 +16,9 @@ use crate::{
     str::{write_digit2, write_digit4},
 };
 
+#[cfg(feature = "alloc")]
+use alloc::{string::String, vec::Vec};
+
 use super::{ComponentKind, ErrorKind, ValidationError};
 
 /// Length of `full-date` string (i.e. length of `YYYY-MM-DD`).
@@ -773,6 +776,16 @@ impl FullDateStr {
     }
 }
 
+#[cfg(feature = "alloc")]
+impl alloc::borrow::ToOwned for FullDateStr {
+    type Owned = FullDateString;
+
+    #[inline]
+    fn to_owned(&self) -> Self::Owned {
+        self.into()
+    }
+}
+
 impl AsRef<[u8]> for FullDateStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {
@@ -876,6 +889,236 @@ impl_cmp_symmetric!([u8], &FullDateStr, [u8]);
 impl_cmp_symmetric!(str, FullDateStr, str);
 impl_cmp_symmetric!(str, FullDateStr, &str);
 impl_cmp_symmetric!(str, &FullDateStr, str);
+
+/// RFC 3339 [`full-date`] owned string.
+///
+/// This is a fixed length string, and implements [`Copy`] trait.
+///
+/// To create a value of this type, use [`<str>::parse()`] method or
+/// [`std::convert::TryFrom`] trait, or convert from `&FullDateStr`.
+///
+/// # Examples
+///
+/// ```
+/// # use datetime_string::rfc3339::FullDateString;
+/// use datetime_string::rfc3339::FullDateStr;
+/// use std::convert::TryFrom;
+///
+/// let try_from = FullDateString::try_from("2001-12-31")?;
+///
+/// let parse = "2001-12-31".parse::<FullDateString>()?;
+/// let parse2: FullDateString = "2001-12-31".parse()?;
+///
+/// let to_owned = FullDateStr::from_str("2001-12-31")?.to_owned();
+/// let into: FullDateString = FullDateStr::from_str("2001-12-31")?.into();
+/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// ```
+///
+/// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
+// Comparisons implemented for the type are consistent (at least it is intended to be so).
+// See <https://github.com/rust-lang/rust-clippy/issues/2025>.
+// Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
+#[allow(clippy::derive_hash_xor_eq)]
+#[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
+pub struct FullDateString([u8; FULL_DATE_LEN]);
+
+impl FullDateString {
+    /// Creates a `FullDateString` from the given bytes.
+    ///
+    /// # Safety
+    ///
+    /// `validate_bytes(&s)` should return `Ok(())`.
+    #[inline]
+    #[must_use]
+    unsafe fn new_unchecked(s: [u8; 10]) -> Self {
+        Self(s)
+    }
+
+    /// Returns a `&FullDateStr` for the string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::FullDateString;
+    /// use datetime_string::rfc3339::FullDateStr;
+    /// let date = "2001-12-31".parse::<FullDateString>()?;
+    ///
+    /// // Usually you don't need to call `as_deref()` explicitly, because
+    /// // `Deref<Target = FullDateStr>` trait is implemented.
+    /// let _: &FullDateStr = date.as_deref();
+    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn as_deref(&self) -> &FullDateStr {
+        unsafe {
+            // This is safe because `self.0` is valid `full-date` string.
+            FullDateStr::from_bytes_unchecked(&self.0)
+        }
+    }
+
+    /// Returns a `&mut FullDateStr` for the string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::FullDateString;
+    /// use datetime_string::rfc3339::FullDateStr;
+    /// let mut date = "2001-12-31".parse::<FullDateString>()?;
+    ///
+    /// // Usually you don't need to call `as_deref_mut()` explicitly, because
+    /// // `DerefMut` trait is implemented.
+    /// let _: &mut FullDateStr = date.as_deref_mut();
+    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn as_deref_mut(&mut self) -> &mut FullDateStr {
+        unsafe {
+            // This is safe because `self.0` is valid `full-date` string.
+            FullDateStr::from_bytes_unchecked_mut(&mut self.0)
+        }
+    }
+}
+
+impl core::borrow::Borrow<FullDateStr> for FullDateString {
+    #[inline]
+    fn borrow(&self) -> &FullDateStr {
+        self.as_deref()
+    }
+}
+
+impl core::borrow::BorrowMut<FullDateStr> for FullDateString {
+    #[inline]
+    fn borrow_mut(&mut self) -> &mut FullDateStr {
+        self.as_deref_mut()
+    }
+}
+
+impl AsRef<[u8]> for FullDateString {
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
+impl AsRef<str> for FullDateString {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl AsRef<FullDateStr> for FullDateString {
+    #[inline]
+    fn as_ref(&self) -> &FullDateStr {
+        self
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl From<FullDateString> for Vec<u8> {
+    #[inline]
+    fn from(v: FullDateString) -> Vec<u8> {
+        (*v.as_bytes_fixed_len()).into()
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl From<FullDateString> for String {
+    #[inline]
+    fn from(v: FullDateString) -> String {
+        let vec: Vec<u8> = (*v.as_bytes_fixed_len()).into();
+        unsafe {
+            // This is safe because a valid `full-date` string is also an ASCII string.
+            String::from_utf8_unchecked(vec)
+        }
+    }
+}
+
+impl From<&FullDateStr> for FullDateString {
+    fn from(v: &FullDateStr) -> Self {
+        unsafe {
+            // This is safe because the value is already validated.
+            Self::new_unchecked(*v.as_bytes_fixed_len())
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for FullDateString {
+    type Error = ValidationError;
+
+    #[inline]
+    fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
+        FullDateStr::from_bytes(v).map(Into::into)
+    }
+}
+
+impl TryFrom<&str> for FullDateString {
+    type Error = ValidationError;
+
+    #[inline]
+    fn try_from(v: &str) -> Result<Self, Self::Error> {
+        FullDateStr::from_str(v).map(Into::into)
+    }
+}
+
+impl TryFrom<[u8; 10]> for FullDateString {
+    type Error = ValidationError;
+
+    #[inline]
+    fn try_from(v: [u8; 10]) -> Result<Self, Self::Error> {
+        validate_bytes(&v)?;
+        Ok(unsafe {
+            // This is safe because the value is successfully validated.
+            Self::new_unchecked(v)
+        })
+    }
+}
+
+impl fmt::Display for FullDateString {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.as_deref().fmt(f)
+    }
+}
+
+impl ops::Deref for FullDateString {
+    type Target = FullDateStr;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.as_deref()
+    }
+}
+
+impl ops::DerefMut for FullDateString {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.as_deref_mut()
+    }
+}
+
+impl str::FromStr for FullDateString {
+    type Err = ValidationError;
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::try_from(s)
+    }
+}
+
+impl_cmp_symmetric!(FullDateStr, FullDateString, &FullDateString);
+impl_cmp_symmetric!(FullDateStr, FullDateString, FullDateStr);
+impl_cmp_symmetric!(FullDateStr, FullDateString, &FullDateStr);
+impl_cmp_symmetric!(str, FullDateString, str);
+impl_cmp_symmetric!(str, FullDateString, &str);
+impl_cmp_symmetric!(str, &FullDateString, str);
+impl_cmp_symmetric!([u8], FullDateString, [u8]);
+impl_cmp_symmetric!([u8], FullDateString, &[u8]);
+impl_cmp_symmetric!([u8], &FullDateString, [u8]);
 
 #[cfg(test)]
 mod tests {
