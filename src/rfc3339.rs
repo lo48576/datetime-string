@@ -3,12 +3,16 @@
 //! [RFC 3339]: https://tools.ietf.org/html/rfc3339
 
 mod full_date;
+mod hhmmss;
 
 use core::fmt;
 
 use crate::datetime::DateError;
 
-pub use self::full_date::{FullDateStr, FullDateString};
+pub use self::{
+    full_date::{FullDateStr, FullDateString},
+    hhmmss::{HhmmssStr, HhmmssString},
+};
 
 /// Component kind.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -20,6 +24,12 @@ enum ComponentKind {
     Month,
     /// Day of month.
     Mday,
+    /// Hour.
+    Hour,
+    /// Minute.
+    Minute,
+    /// Second.
+    Second,
 }
 
 impl ComponentKind {
@@ -29,6 +39,9 @@ impl ComponentKind {
             Self::Year => "year",
             Self::Month => "month",
             Self::Mday => "day of month",
+            Self::Hour => "hour",
+            Self::Minute => "minute",
+            Self::Second => "second",
         }
     }
 }
