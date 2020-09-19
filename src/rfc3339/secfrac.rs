@@ -57,7 +57,7 @@ impl SecfracStr {
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
+    pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
         Self::from_str_unchecked(str::from_utf8_unchecked(s))
     }
 
@@ -68,7 +68,7 @@ impl SecfracStr {
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
+    pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
         Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
     }
 

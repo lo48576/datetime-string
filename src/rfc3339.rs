@@ -4,19 +4,21 @@
 
 mod full_date;
 mod hhmmss;
+mod partial_time;
 mod secfrac;
 
 use core::fmt;
 
 use crate::datetime::DateError;
 
-#[cfg(feature = "alloc")]
-pub use self::secfrac::SecfracString;
 pub use self::{
     full_date::{FullDateStr, FullDateString},
     hhmmss::{HhmmssStr, HhmmssString},
+    partial_time::PartialTimeStr,
     secfrac::SecfracStr,
 };
+#[cfg(feature = "alloc")]
+pub use self::{partial_time::PartialTimeString, secfrac::SecfracString};
 
 /// Component kind.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
