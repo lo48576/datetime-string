@@ -3,6 +3,7 @@
 //! [RFC 3339]: https://tools.ietf.org/html/rfc3339
 
 mod full_date;
+mod full_time;
 mod hhmmss;
 mod num_offset;
 mod offset;
@@ -15,6 +16,7 @@ use crate::datetime::DateError;
 
 pub use self::{
     full_date::{FullDateStr, FullDateString},
+    full_time::FullTimeStr,
     hhmmss::{HhmmssStr, HhmmssString},
     num_offset::{TimeNumOffsetStr, TimeNumOffsetString},
     offset::TimeOffsetStr,
@@ -22,7 +24,10 @@ pub use self::{
     secfrac::SecfracStr,
 };
 #[cfg(feature = "alloc")]
-pub use self::{offset::TimeOffsetString, partial_time::PartialTimeString, secfrac::SecfracString};
+pub use self::{
+    full_time::FullTimeString, offset::TimeOffsetString, partial_time::PartialTimeString,
+    secfrac::SecfracString,
+};
 
 /// Sign of a time offset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
