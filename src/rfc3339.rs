@@ -2,6 +2,7 @@
 //!
 //! [RFC 3339]: https://tools.ietf.org/html/rfc3339
 
+mod date_time;
 mod full_date;
 mod full_time;
 mod hhmmss;
@@ -15,6 +16,7 @@ use core::fmt;
 use crate::datetime::DateError;
 
 pub use self::{
+    date_time::DateTimeStr,
     full_date::{FullDateStr, FullDateString},
     full_time::FullTimeStr,
     hhmmss::{HhmmssStr, HhmmssString},
@@ -25,8 +27,8 @@ pub use self::{
 };
 #[cfg(feature = "alloc")]
 pub use self::{
-    full_time::FullTimeString, offset::TimeOffsetString, partial_time::PartialTimeString,
-    secfrac::SecfracString,
+    date_time::DateTimeString, full_time::FullTimeString, offset::TimeOffsetString,
+    partial_time::PartialTimeString, secfrac::SecfracString,
 };
 
 /// Sign of a time offset.
