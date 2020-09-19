@@ -4,14 +4,18 @@
 
 mod full_date;
 mod hhmmss;
+mod secfrac;
 
 use core::fmt;
 
 use crate::datetime::DateError;
 
+#[cfg(feature = "alloc")]
+pub use self::secfrac::SecfracString;
 pub use self::{
     full_date::{FullDateStr, FullDateString},
     hhmmss::{HhmmssStr, HhmmssString},
+    secfrac::SecfracStr,
 };
 
 /// Component kind.
@@ -30,6 +34,8 @@ enum ComponentKind {
     Minute,
     /// Second.
     Second,
+    /// Fraction part of a second.
+    Secfrac,
 }
 
 impl ComponentKind {
@@ -42,6 +48,7 @@ impl ComponentKind {
             Self::Hour => "hour",
             Self::Minute => "minute",
             Self::Second => "second",
+            Self::Secfrac => "secfrac",
         }
     }
 }
