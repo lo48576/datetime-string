@@ -4,6 +4,7 @@
 
 mod full_date;
 mod hhmmss;
+mod num_offset;
 mod partial_time;
 mod secfrac;
 
@@ -14,6 +15,7 @@ use crate::datetime::DateError;
 pub use self::{
     full_date::{FullDateStr, FullDateString},
     hhmmss::{HhmmssStr, HhmmssString},
+    num_offset::{TimeNumOffsetStr, TimeNumOffsetString},
     partial_time::PartialTimeStr,
     secfrac::SecfracStr,
 };
@@ -47,6 +49,10 @@ enum ComponentKind {
     Second,
     /// Fraction part of a second.
     Secfrac,
+    /// Hour of time offset.
+    OffsetHour,
+    /// Minute of time offset.
+    OffsetMinute,
 }
 
 impl ComponentKind {
@@ -60,6 +66,8 @@ impl ComponentKind {
             Self::Minute => "minute",
             Self::Second => "second",
             Self::Secfrac => "secfrac",
+            Self::OffsetHour => "time offset hour",
+            Self::OffsetMinute => "time offset minute",
         }
     }
 }
