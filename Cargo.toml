@@ -19,9 +19,15 @@ all-features = true
 default = ["std"]
 
 alloc = []
+alloc_with_serde = ["alloc", "serde/alloc"]
 std = ["alloc"]
+std_with_serde = ["std", "serde/std"]
 
 [dependencies]
+serde = { version = "1.0.116", default-features = false, features = ["derive"], optional = true }
+
+[dev-dependencies]
+serde_test = "1.0.116"
 
 [badges]
 maintenance = { status = "experimental" }

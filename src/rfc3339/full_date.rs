@@ -19,6 +19,9 @@ use crate::{
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
 use super::{ComponentKind, ErrorKind, ValidationError};
 
 /// Length of `full-date` string (i.e. length of `YYYY-MM-DD`).
@@ -78,6 +81,8 @@ fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
@@ -915,6 +920,8 @@ impl_cmp_symmetric!(str, &FullDateStr, str);
 /// ```
 ///
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8; 10]` rather than as a string.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
@@ -1120,9 +1127,107 @@ impl_cmp_symmetric!([u8], FullDateString, [u8]);
 impl_cmp_symmetric!([u8], FullDateString, &[u8]);
 impl_cmp_symmetric!([u8], &FullDateString, [u8]);
 
+#[cfg(feature = "serde")]
+impl Serialize for FullDateString {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+/// Items for serde support.
+#[cfg(feature = "serde")]
+mod serde_ {
+    use super::*;
+
+    use serde::de::{Deserialize, Deserializer, Visitor};
+
+    /// Visitor for `&FullDateStr`.
+    struct StrVisitor;
+
+    impl<'de> Visitor<'de> for StrVisitor {
+        type Value = &'de FullDateStr;
+
+        #[inline]
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("RFC 3339 full-date string")
+        }
+
+        #[inline]
+        fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Self::Value::try_from(v).map_err(E::custom)
+        }
+
+        #[inline]
+        fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Self::Value::try_from(v).map_err(E::custom)
+        }
+    }
+
+    impl<'de> Deserialize<'de> for &'de FullDateStr {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            deserializer.deserialize_any(StrVisitor)
+        }
+    }
+
+    /// Visitor for `FullDateString`.
+    struct StringVisitor;
+
+    impl<'de> Visitor<'de> for StringVisitor {
+        type Value = FullDateString;
+
+        #[inline]
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("RFC 3339 full-date string")
+        }
+
+        #[inline]
+        fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Self::Value::try_from(v).map_err(E::custom)
+        }
+
+        #[inline]
+        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Self::Value::try_from(v).map_err(E::custom)
+        }
+    }
+
+    impl<'de> Deserialize<'de> for FullDateString {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            deserializer.deserialize_any(StringVisitor)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "serde")]
+    use super::*;
+
     use super::validate_bytes as s_validate;
+
+    #[cfg(feature = "serde")]
+    use serde_test::{assert_de_tokens, assert_tokens, Token};
 
     #[test]
     fn validate_bytes() {
@@ -1177,5 +1282,42 @@ mod tests {
         assert!(s_validate(b"01-01-01").is_err());
         assert!(s_validate(b"+001-01-01").is_err());
         assert!(s_validate(b"-001-01-01").is_err());
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn ser_de_str() {
+        let raw: &'static str = "2001-12-31";
+        assert_tokens(
+            &FullDateStr::from_str(raw).unwrap(),
+            &[Token::BorrowedStr(raw)],
+        );
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn ser_de_string() {
+        let raw: &'static str = "2001-12-31";
+        assert_tokens(&FullDateString::try_from(raw).unwrap(), &[Token::Str(raw)]);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn de_bytes_slice() {
+        let raw: &'static [u8; 10] = b"2001-12-31";
+        assert_de_tokens(
+            &FullDateStr::from_bytes(raw).unwrap(),
+            &[Token::BorrowedBytes(raw)],
+        );
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn de_bytes() {
+        let raw: &'static [u8; 10] = b"2001-12-31";
+        assert_de_tokens(
+            &FullDateString::try_from(&raw[..]).unwrap(),
+            &[Token::Bytes(raw)],
+        );
     }
 }

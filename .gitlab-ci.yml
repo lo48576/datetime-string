@@ -75,11 +75,29 @@ test:msrv:no-default-features:
     RUST_VERSION: $MSRV
     FEATURES: --no-default-features
 
+test:msrv:serde:
+  <<: *test_msrv
+  variables:
+    RUST_VERSION: $MSRV
+    FEATURES: --no-default-features --features=serde
+
 test:msrv:alloc:
   <<: *test_msrv
   variables:
     RUST_VERSION: $MSRV
     FEATURES: --no-default-features --features=alloc
+
+test:msrv:alloc_with_serde:
+  <<: *test_msrv
+  variables:
+    RUST_VERSION: $MSRV
+    FEATURES: --no-default-features --features=alloc_with_serde
+
+test:msrv:std_with_serde:
+  <<: *test_msrv
+  variables:
+    RUST_VERSION: $MSRV
+    FEATURES: --no-default-features --features=std_with_serde
 
 test:stable:default-features: &test_stable
   <<: *test
