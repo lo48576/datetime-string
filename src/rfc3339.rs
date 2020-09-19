@@ -5,6 +5,7 @@
 mod full_date;
 mod hhmmss;
 mod num_offset;
+mod offset;
 mod partial_time;
 mod secfrac;
 
@@ -16,11 +17,12 @@ pub use self::{
     full_date::{FullDateStr, FullDateString},
     hhmmss::{HhmmssStr, HhmmssString},
     num_offset::{TimeNumOffsetStr, TimeNumOffsetString},
+    offset::TimeOffsetStr,
     partial_time::PartialTimeStr,
     secfrac::SecfracStr,
 };
 #[cfg(feature = "alloc")]
-pub use self::{partial_time::PartialTimeString, secfrac::SecfracString};
+pub use self::{offset::TimeOffsetString, partial_time::PartialTimeString, secfrac::SecfracString};
 
 /// Sign of a time offset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -49,6 +51,8 @@ enum ComponentKind {
     Second,
     /// Fraction part of a second.
     Secfrac,
+    /// Time offset.
+    Offset,
     /// Hour of time offset.
     OffsetHour,
     /// Minute of time offset.
@@ -66,6 +70,7 @@ impl ComponentKind {
             Self::Minute => "minute",
             Self::Second => "second",
             Self::Secfrac => "secfrac",
+            Self::Offset => "time offset",
             Self::OffsetHour => "time offset hour",
             Self::OffsetMinute => "time offset minute",
         }
