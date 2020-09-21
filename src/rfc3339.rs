@@ -5,7 +5,6 @@
 mod date_time;
 mod full_date;
 mod full_time;
-mod hhmmss;
 mod num_offset;
 mod offset;
 mod partial_time;
@@ -15,7 +14,6 @@ pub use self::{
     date_time::DateTimeStr,
     full_date::{FullDateStr, FullDateString},
     full_time::FullTimeStr,
-    hhmmss::{HhmmssStr, HhmmssString},
     num_offset::{TimeNumOffsetStr, TimeNumOffsetString},
     offset::TimeOffsetStr,
     partial_time::PartialTimeStr,

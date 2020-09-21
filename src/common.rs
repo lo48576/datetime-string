@@ -2,6 +2,10 @@
 //!
 //! This module contains types which may be commonly used for multiple specifications.
 
+mod hms6_colon;
+
+pub use hms6_colon::{Hms6ColonStr, Hms6ColonString};
+
 /// Sign of a time offset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TimeOffsetSign {

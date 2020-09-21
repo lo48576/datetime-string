@@ -8,8 +8,9 @@ use core::{cmp::Ordering, convert::TryFrom, fmt, ops, str};
 use serde::Serialize;
 
 use crate::{
+    common::Hms6ColonStr,
     error::{Error, ErrorKind},
-    rfc3339::{HhmmssStr, SecfracStr},
+    rfc3339::SecfracStr,
 };
 
 #[cfg(feature = "alloc")]
@@ -28,14 +29,14 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     let (hms, dotfrac) = match s.len().cmp(&PARTIAL_TIME_LEN_MIN) {
         Ordering::Greater => s.split_at(PARTIAL_TIME_LEN_MIN),
         Ordering::Less => return Err(ErrorKind::TooShort.into()),
-        Ordering::Equal => return HhmmssStr::from_bytes(s).map(|_| ()),
+        Ordering::Equal => return Hms6ColonStr::from_bytes(s).map(|_| ()),
     };
     debug_assert!(
         !dotfrac.is_empty(),
         "If `dotfrac` component is available, it should be non-empty string"
     );
 
-    HhmmssStr::from_bytes(hms)?;
+    Hms6ColonStr::from_bytes(hms)?;
     SecfracStr::from_bytes(dotfrac)?;
 
     Ok(())
@@ -245,10 +246,12 @@ impl PartialTimeStr {
     /// ```
     #[inline]
     #[must_use]
-    pub fn hms(&self) -> &HhmmssStr {
+    pub fn hms(&self) -> &Hms6ColonStr {
         unsafe {
             // This is safe because a valid partial-time string has `hh:mm:ss` as a prefix.
-            HhmmssStr::from_bytes_unchecked(self.0.as_bytes().get_unchecked(..PARTIAL_TIME_LEN_MIN))
+            Hms6ColonStr::from_bytes_unchecked(
+                self.0.as_bytes().get_unchecked(..PARTIAL_TIME_LEN_MIN),
+            )
         }
     }
 
@@ -268,10 +271,10 @@ impl PartialTimeStr {
     /// ```
     #[inline]
     #[must_use]
-    pub fn hms_mut(&mut self) -> &mut HhmmssStr {
+    pub fn hms_mut(&mut self) -> &mut Hms6ColonStr {
         unsafe {
             // This is safe because a valid partial-time string has `hh:mm:ss` as a prefix.
-            HhmmssStr::from_bytes_unchecked_mut(
+            Hms6ColonStr::from_bytes_unchecked_mut(
                 self.0
                     .as_bytes_mut()
                     .get_unchecked_mut(..PARTIAL_TIME_LEN_MIN),
