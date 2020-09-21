@@ -35,7 +35,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// RFC 3339 [`time-secfrac`] string slice.
+/// String slice for a time in RFC 3339 [`time-secfrac`] format, such as `.7890`.
 ///
 /// [`time-secfrac`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

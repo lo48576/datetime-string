@@ -1,4 +1,4 @@
-//! `%H:%M:%S` (`hh:mm:ss`) time string, such as `01:23:45`.
+//! Time string in `%H:%M:%S` (`hh:mm:ss`) format.
 //!
 //! This is also an RFC 3339 [`partial-time`] string without `secfrac` part.
 //!
@@ -94,7 +94,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// String slice in `%H:%M:%S` (`hh:mm:ss`) format.
+/// String slice for a time in `%H:%M:%S` (`hh:mm:ss`) format, such as `01:23:45`.
 ///
 /// This is also an RFC 3339 [`partial-time`] string without `secfrac` part.
 ///
@@ -836,7 +836,7 @@ impl_cmp_symmetric!(str, Hms6ColonStr, str);
 impl_cmp_symmetric!(str, Hms6ColonStr, &str);
 impl_cmp_symmetric!(str, &Hms6ColonStr, str);
 
-/// Owned string in `%H:%M:%S` (`hh:mm:ss`) format.
+/// Owned string for a time in `%H:%M:%S` (`hh:mm:ss`) format, such as `01:23:45`.
 ///
 /// This is also an RFC 3339 [`partial-time`] string without `secfrac` part.
 ///

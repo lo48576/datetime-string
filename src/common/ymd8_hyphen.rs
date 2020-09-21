@@ -1,4 +1,4 @@
-//! `%Y-%m-%d` (`YYYY-MM-DD`) time string, such as `2001-12-31`.
+//! Date string in `%Y-%m-%d` (`YYYY-MM-DD`) format.
 //!
 //! This is also an RFC 3339 [`full-date`] string.
 //!
@@ -78,7 +78,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     validate_ym1d(year, month1, mday).map_err(Into::into)
 }
 
-/// String slice in `YYYY-MM-DD` format.
+/// String slice for a date in `YYYY-MM-DD` format, such as `2001-12-31`.
 ///
 /// This is also an RFC 3339 [`full-date`] string.
 ///
@@ -899,7 +899,7 @@ impl_cmp_symmetric!(str, Ymd8HyphenStr, str);
 impl_cmp_symmetric!(str, Ymd8HyphenStr, &str);
 impl_cmp_symmetric!(str, &Ymd8HyphenStr, str);
 
-/// Owned string in `YYYY-MM-DD` format.
+/// Owned string for a date in `YYYY-MM-DD` format, such as `2001-12-31`.
 ///
 /// This is also an RFC 3339 [`full-date`] string.
 ///

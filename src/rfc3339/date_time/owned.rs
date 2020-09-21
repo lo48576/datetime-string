@@ -14,7 +14,8 @@ use crate::Error;
 
 use super::{validate_bytes, DateTimeStr};
 
-/// RFC 3339 [`date-time`] string slice.
+/// Owned string for a datetime in RFC 3339 [`date-time`] format, such as
+/// `2001-06-17T12:34:56.7890-23:12`.
 ///
 /// # Examples
 ///

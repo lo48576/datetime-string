@@ -42,7 +42,9 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// RFC 3339 [`partial-time`] string slice.
+/// String slice for a time in RFC 3339 [`partial-time`] format, such as `12:34:56.7890`.
+///
+/// This is "partial", because it is not associated to a time offset.
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

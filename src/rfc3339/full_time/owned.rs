@@ -14,7 +14,7 @@ use crate::Error;
 
 use super::{validate_bytes, FullTimeStr};
 
-/// RFC 3339 [`full-time`] string slice.
+/// Owned string for a time in RFC 3339 [`full-time`] format, such as `12:34:56.7890-23:12`.
 ///
 /// # Examples
 ///

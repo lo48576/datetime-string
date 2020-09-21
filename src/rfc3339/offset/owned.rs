@@ -14,7 +14,7 @@ use crate::Error;
 
 use super::{validate_bytes, TimeOffsetStr};
 
-/// RFC 3339 [`time-offset`] string slice without secfrac part.
+/// Owned string for a time in RFC 3339 [`time-offset`] format, such as `+09:00`, `-00:00`, and `Z`.
 ///
 /// # Examples
 ///

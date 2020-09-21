@@ -37,7 +37,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     }
 }
 
-/// RFC 3339 [`time-offset`] string slice.
+/// String slice for a time in RFC 3339 [`time-offset`] format, such as `+09:00`, `-00:00`, and `Z`.
 ///
 /// [`time-offset`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

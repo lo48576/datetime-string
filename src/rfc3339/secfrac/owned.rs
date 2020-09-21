@@ -14,9 +14,7 @@ use crate::Error;
 
 use super::{validate_bytes, SecfracStr};
 
-/// RFC 3339 [`time-secfrac`] string slice without secfrac part.
-///
-/// This is a fixed length string, and implements [`Copy`] trait.
+/// Owned string for a time in RFC 3339 [`time-secfrac`] format, such as `.7890`.
 ///
 /// To create a value of this type, use [`<str>::parse()`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&SecfracStr`.

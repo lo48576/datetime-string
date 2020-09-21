@@ -1,4 +1,4 @@
-//! Time offset in `+hh:mm` or `-hh:mm` format.
+//! Time offset string in `+hh:mm` or `-hh:mm` format.
 //!
 //! This is also an RFC 3339 [`time-numoffset`].
 //!
@@ -75,7 +75,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// String slice in `+hh:mm` or `-hh:mm` format.
+/// String slice for a time offset in `+hh:mm` or `-hh:mm` format, such as `+09:00` and `-00:00`.
 ///
 /// This is also an RFC 3339 [`time-numoffset`] string.
 ///
@@ -931,7 +931,7 @@ impl_cmp_symmetric!(str, TimeNumOffsetColonStr, str);
 impl_cmp_symmetric!(str, TimeNumOffsetColonStr, &str);
 impl_cmp_symmetric!(str, &TimeNumOffsetColonStr, str);
 
-/// Owned string in `+hh:mm` or `-hh:mm` format.
+/// Owned string for a time offset in `+hh:mm` or `-hh:mm` format, such as `+09:00` and `-00:00`.
 ///
 /// This is also an RFC 3339 [`time-numoffset`] string.
 ///
