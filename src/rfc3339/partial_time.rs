@@ -2,20 +2,22 @@
 //!
 //! [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
+#[cfg(feature = "alloc")]
+mod owned;
+
 use core::{cmp::Ordering, convert::TryFrom, fmt, ops, str};
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::rfc3339::{HhmmssStr, SecfracStr};
-
-use super::{ErrorKind, ValidationError};
+use crate::{
+    common::Hms6ColonStr,
+    error::{Error, ErrorKind},
+    rfc3339::SecfracStr,
+};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::PartialTimeString;
-
-#[cfg(feature = "alloc")]
-mod owned;
 
 /// Minimum length of `partial-time` string (i.e. length of `hh:mm:ss`).
 const PARTIAL_TIME_LEN_MIN: usize = 8;
@@ -23,18 +25,18 @@ const PARTIAL_TIME_LEN_MIN: usize = 8;
 /// Validates the given string as an RFC 3339 [`partial-time`] string.
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
-fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
+fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     let (hms, dotfrac) = match s.len().cmp(&PARTIAL_TIME_LEN_MIN) {
         Ordering::Greater => s.split_at(PARTIAL_TIME_LEN_MIN),
         Ordering::Less => return Err(ErrorKind::TooShort.into()),
-        Ordering::Equal => return HhmmssStr::from_bytes(s).map(|_| ()),
+        Ordering::Equal => return Hms6ColonStr::from_bytes(s).map(|_| ()),
     };
     debug_assert!(
         !dotfrac.is_empty(),
         "If `dotfrac` component is available, it should be non-empty string"
     );
 
-    HhmmssStr::from_bytes(hms)?;
+    Hms6ColonStr::from_bytes(hms)?;
     SecfracStr::from_bytes(dotfrac)?;
 
     Ok(())
@@ -116,12 +118,12 @@ impl PartialTimeStr {
     /// assert!(PartialTimeStr::from_str(".").is_err());
     /// assert!(PartialTimeStr::from_str("12:34.56").is_err());
     ///
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     // `FromStr` trait cannot be implemented for a slice.
     #[allow(clippy::should_implement_trait)]
-    pub fn from_str(s: &str) -> Result<&Self, ValidationError> {
+    pub fn from_str(s: &str) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -140,10 +142,10 @@ impl PartialTimeStr {
     /// assert_eq!(time.as_str(), "23:12:01.0000");
     ///
     /// assert_eq!(buf, "23:12:01.0000");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, ValidationError> {
+    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -164,10 +166,10 @@ impl PartialTimeStr {
     /// assert!(PartialTimeStr::from_bytes(b".").is_err());
     /// assert!(PartialTimeStr::from_bytes(b"12:34.56").is_err());
     ///
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes(s: &[u8]) -> Result<&Self, ValidationError> {
+    pub fn from_bytes(s: &[u8]) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -186,10 +188,10 @@ impl PartialTimeStr {
     /// assert_eq!(time.as_str(), "23:12:01.0000");
     ///
     /// assert_eq!(&buf[..], b"23:12:01.0000");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, ValidationError> {
+    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -202,7 +204,7 @@ impl PartialTimeStr {
     /// let time = PartialTimeStr::from_str("12:34:56.7890")?;
     ///
     /// assert_eq!(time.as_str(), "12:34:56.7890");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -221,7 +223,7 @@ impl PartialTimeStr {
     /// let time = PartialTimeStr::from_str("12:34:56.7890")?;
     ///
     /// assert_eq!(time.as_str(), "12:34:56.7890");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`as_bytes_fixed_len`]: #method.as_bytes_fixed_len
@@ -240,14 +242,16 @@ impl PartialTimeStr {
     /// let time = PartialTimeStr::from_str("12:34:56.7890")?;
     ///
     /// assert_eq!(time.hms(), "12:34:56");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn hms(&self) -> &HhmmssStr {
+    pub fn hms(&self) -> &Hms6ColonStr {
         unsafe {
             // This is safe because a valid partial-time string has `hh:mm:ss` as a prefix.
-            HhmmssStr::from_bytes_unchecked(self.0.as_bytes().get_unchecked(..PARTIAL_TIME_LEN_MIN))
+            Hms6ColonStr::from_bytes_unchecked(
+                self.0.as_bytes().get_unchecked(..PARTIAL_TIME_LEN_MIN),
+            )
         }
     }
 
@@ -263,14 +267,14 @@ impl PartialTimeStr {
     ///
     /// time.hms_mut().set_time(23, 12, 1);
     /// assert_eq!(time.as_str(), "23:12:01.7890");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn hms_mut(&mut self) -> &mut HhmmssStr {
+    pub fn hms_mut(&mut self) -> &mut Hms6ColonStr {
         unsafe {
             // This is safe because a valid partial-time string has `hh:mm:ss` as a prefix.
-            HhmmssStr::from_bytes_unchecked_mut(
+            Hms6ColonStr::from_bytes_unchecked_mut(
                 self.0
                     .as_bytes_mut()
                     .get_unchecked_mut(..PARTIAL_TIME_LEN_MIN),
@@ -287,7 +291,7 @@ impl PartialTimeStr {
     /// let time = PartialTimeStr::from_str("12:34:56.7890")?;
     ///
     /// assert_eq!(time.secfrac().unwrap(), ".7890");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`time-secfrac`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -315,7 +319,7 @@ impl PartialTimeStr {
     ///
     /// time.hms_mut().set_time(23, 12, 1);
     /// assert_eq!(time.as_str(), "23:12:01.7890");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`time-secfrac`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -373,7 +377,7 @@ impl<'a> From<&'a PartialTimeStr> for &'a str {
 }
 
 impl<'a> TryFrom<&'a [u8]> for &'a PartialTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
@@ -386,7 +390,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a PartialTimeStr {
 }
 
 impl<'a> TryFrom<&'a mut [u8]> for &'a mut PartialTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
@@ -399,7 +403,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut PartialTimeStr {
 }
 
 impl<'a> TryFrom<&'a str> for &'a PartialTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
@@ -412,7 +416,7 @@ impl<'a> TryFrom<&'a str> for &'a PartialTimeStr {
 }
 
 impl<'a> TryFrom<&'a mut str> for &'a mut PartialTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {

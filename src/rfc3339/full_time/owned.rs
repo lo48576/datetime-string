@@ -10,7 +10,9 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{validate_bytes, FullTimeStr, ValidationError};
+use crate::Error;
+
+use super::{validate_bytes, FullTimeStr};
 
 /// RFC 3339 [`full-time`] string slice.
 ///
@@ -28,7 +30,7 @@ use super::{validate_bytes, FullTimeStr, ValidationError};
 ///
 /// let to_owned = FullTimeStr::from_str("12:34:56.7890-23:12")?.to_owned();
 /// let into: FullTimeString = FullTimeStr::from_str("12:34:56.7890-23:12")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`full-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -78,7 +80,7 @@ impl FullTimeString {
     /// // Usually you don't need to call `as_deref()` explicitly, because
     /// // `Deref<Target = FullTimeStr>` trait is implemented.
     /// let _: &FullTimeStr = time.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -101,7 +103,7 @@ impl FullTimeString {
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
     /// let _: &mut FullTimeStr = time.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -172,7 +174,7 @@ impl From<&FullTimeStr> for FullTimeString {
 }
 
 impl TryFrom<&[u8]> for FullTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
@@ -181,7 +183,7 @@ impl TryFrom<&[u8]> for FullTimeString {
 }
 
 impl TryFrom<&str> for FullTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
@@ -190,7 +192,7 @@ impl TryFrom<&str> for FullTimeString {
 }
 
 impl TryFrom<Vec<u8>> for FullTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
@@ -226,7 +228,7 @@ impl ops::DerefMut for FullTimeString {
 }
 
 impl str::FromStr for FullTimeString {
-    type Err = ValidationError;
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {

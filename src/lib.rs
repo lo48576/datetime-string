@@ -10,7 +10,11 @@ extern crate alloc;
 #[macro_use]
 mod macros;
 
+pub mod common;
 pub(crate) mod datetime;
+pub(crate) mod error;
 pub(crate) mod parse;
 pub mod rfc3339;
 pub(crate) mod str;
+
+pub use self::error::Error;

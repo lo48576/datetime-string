@@ -10,7 +10,9 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{validate_bytes, TimeOffsetStr, ValidationError};
+use crate::Error;
+
+use super::{validate_bytes, TimeOffsetStr};
 
 /// RFC 3339 [`time-offset`] string slice without secfrac part.
 ///
@@ -28,7 +30,7 @@ use super::{validate_bytes, TimeOffsetStr, ValidationError};
 ///
 /// let to_owned = TimeOffsetStr::from_str("-12:34")?.to_owned();
 /// let into: TimeOffsetString = TimeOffsetStr::from_str("-12:34")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`time-offset`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -78,7 +80,7 @@ impl TimeOffsetString {
     /// // Usually you don't need to call `as_deref()` explicitly, because
     /// // `Deref<Target = TimeOffsetStr>` trait is implemented.
     /// let _: &TimeOffsetStr = secfrac.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -101,7 +103,7 @@ impl TimeOffsetString {
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
     /// let _: &mut TimeOffsetStr = secfrac.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -172,7 +174,7 @@ impl From<&TimeOffsetStr> for TimeOffsetString {
 }
 
 impl TryFrom<&[u8]> for TimeOffsetString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
@@ -181,7 +183,7 @@ impl TryFrom<&[u8]> for TimeOffsetString {
 }
 
 impl TryFrom<&str> for TimeOffsetString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
@@ -190,7 +192,7 @@ impl TryFrom<&str> for TimeOffsetString {
 }
 
 impl TryFrom<Vec<u8>> for TimeOffsetString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
@@ -226,7 +228,7 @@ impl ops::DerefMut for TimeOffsetString {
 }
 
 impl str::FromStr for TimeOffsetString {
-    type Err = ValidationError;
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {

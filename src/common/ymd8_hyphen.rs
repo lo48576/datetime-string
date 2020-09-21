@@ -1,4 +1,6 @@
-//! RFC 3339 [`full-date`] string types.
+//! `%Y-%m-%d` (`YYYY-MM-DD`) time string, such as `2001-12-31`.
+//!
+//! This is also an RFC 3339 [`full-date`] string.
 //!
 //! [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
@@ -22,9 +24,9 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{ComponentKind, ErrorKind, ValidationError};
+use crate::error::{ComponentKind, Error, ErrorKind};
 
-/// Length of `full-date` string (i.e. length of `YYYY-MM-DD`).
+/// Length of RFC 3339 `full-date` string (i.e. length of `YYYY-MM-DD`).
 const FULL_DATE_LEN: usize = 10;
 /// Range of the year in the string.
 const YEAR_RANGE: Range<usize> = 0..4;
@@ -36,7 +38,7 @@ const MDAY_RANGE: Range<usize> = 8..10;
 /// Validates the given string as an RFC 3339 [`full-date`] string.
 ///
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
-fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
+fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     let s: &[u8; FULL_DATE_LEN] = match s.len().cmp(&FULL_DATE_LEN) {
         Ordering::Greater => return Err(ErrorKind::TooLong.into()),
         Ordering::Less => return Err(ErrorKind::TooShort.into()),
@@ -76,7 +78,9 @@ fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
     validate_ym1d(year, month1, mday).map_err(Into::into)
 }
 
-/// RFC 3339 [`full-date`] string slice.
+/// String slice in `YYYY-MM-DD` format.
+///
+/// This is also an RFC 3339 [`full-date`] string.
 ///
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -88,10 +92,10 @@ fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct FullDateStr(str);
+pub struct Ymd8HyphenStr(str);
 
-impl FullDateStr {
-    /// Creates a `&FullDateStr` from the given byte slice.
+impl Ymd8HyphenStr {
+    /// Creates a `&Ymd8HyphenStr` from the given byte slice.
     ///
     /// # Safety
     ///
@@ -102,7 +106,7 @@ impl FullDateStr {
         Self::from_str_unchecked(str::from_utf8_unchecked(s))
     }
 
-    /// Creates a `&mut FullDateStr` from the given mutable byte slice.
+    /// Creates a `&mut Ymd8HyphenStr` from the given mutable byte slice.
     ///
     /// # Safety
     ///
@@ -113,7 +117,7 @@ impl FullDateStr {
         Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
     }
 
-    /// Creates a `&FullDateStr` from the given string slice.
+    /// Creates a `&Ymd8HyphenStr` from the given string slice.
     ///
     /// # Safety
     ///
@@ -121,10 +125,10 @@ impl FullDateStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const FullDateStr)
+        &*(s as *const str as *const Ymd8HyphenStr)
     }
 
-    /// Creates a `&mut FullDateStr` from the given mutable string slice.
+    /// Creates a `&mut Ymd8HyphenStr` from the given mutable string slice.
     ///
     /// # Safety
     ///
@@ -132,94 +136,94 @@ impl FullDateStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut FullDateStr)
+        &mut *(s as *mut str as *mut Ymd8HyphenStr)
     }
 
-    /// Creates a new `&FullDateStr` from a string slice.
+    /// Creates a new `&Ymd8HyphenStr` from a string slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     /// assert_eq!(date.as_str(), "2001-12-31");
     ///
-    /// assert!(FullDateStr::from_str("0000-01-01").is_ok());
-    /// assert!(FullDateStr::from_str("9999-12-31").is_ok());
+    /// assert!(Ymd8HyphenStr::from_str("0000-01-01").is_ok());
+    /// assert!(Ymd8HyphenStr::from_str("9999-12-31").is_ok());
     ///
-    /// assert!(FullDateStr::from_str("2004-02-29").is_ok(), "2004 is a leap year");
-    /// assert!(FullDateStr::from_str("2100-02-29").is_err(), "2100 is NOT a leap year");
-    /// assert!(FullDateStr::from_str("2000-02-29").is_ok(), "2000 is a leap year");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// assert!(Ymd8HyphenStr::from_str("2004-02-29").is_ok(), "2004 is a leap year");
+    /// assert!(Ymd8HyphenStr::from_str("2100-02-29").is_err(), "2100 is NOT a leap year");
+    /// assert!(Ymd8HyphenStr::from_str("2000-02-29").is_ok(), "2000 is a leap year");
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     // `FromStr` trait cannot be implemented for a slice.
     #[allow(clippy::should_implement_trait)]
-    pub fn from_str(s: &str) -> Result<&Self, ValidationError> {
+    pub fn from_str(s: &str) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&mut FullDateStr` from a mutable string slice.
+    /// Creates a new `&mut Ymd8HyphenStr` from a mutable string slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf = "2001-12-31".to_owned();
-    /// let date = FullDateStr::from_mut_str(&mut buf)?;
+    /// let date = Ymd8HyphenStr::from_mut_str(&mut buf)?;
     /// assert_eq!(date.as_str(), "2001-12-31");
     ///
     /// date.set_year(1999)?;
     /// assert_eq!(date.as_str(), "1999-12-31");
     ///
     /// assert_eq!(buf, "1999-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, ValidationError> {
+    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&FullDateStr` from a byte slice.
+    /// Creates a new `&Ymd8HyphenStr` from a byte slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_bytes(b"2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_bytes(b"2001-12-31")?;
     /// assert_eq!(date.as_str(), "2001-12-31");
     ///
-    /// assert!(FullDateStr::from_bytes(b"0000-01-01").is_ok());
-    /// assert!(FullDateStr::from_bytes(b"9999-12-31").is_ok());
+    /// assert!(Ymd8HyphenStr::from_bytes(b"0000-01-01").is_ok());
+    /// assert!(Ymd8HyphenStr::from_bytes(b"9999-12-31").is_ok());
     ///
-    /// assert!(FullDateStr::from_bytes(b"2004-02-29").is_ok(), "2004 is a leap year");
-    /// assert!(FullDateStr::from_bytes(b"2100-02-29").is_err(), "2100 is NOT a leap year");
-    /// assert!(FullDateStr::from_bytes(b"2000-02-29").is_ok(), "2000 is a leap year");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// assert!(Ymd8HyphenStr::from_bytes(b"2004-02-29").is_ok(), "2004 is a leap year");
+    /// assert!(Ymd8HyphenStr::from_bytes(b"2100-02-29").is_err(), "2100 is NOT a leap year");
+    /// assert!(Ymd8HyphenStr::from_bytes(b"2000-02-29").is_ok(), "2000 is a leap year");
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes(s: &[u8]) -> Result<&Self, ValidationError> {
+    pub fn from_bytes(s: &[u8]) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&mut FullDateStr` from a mutable byte slice.
+    /// Creates a new `&mut Ymd8HyphenStr` from a mutable byte slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2001-12-31";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2001-12-31");
     ///
     /// date.set_year(1999)?;
     /// assert_eq!(date.as_str(), "1999-12-31");
     ///
     /// assert_eq!(&buf[..], b"1999-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, ValidationError> {
+    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -228,11 +232,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.as_str(), "2001-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -247,11 +251,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.as_bytes(), b"2001-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`as_bytes_fixed_len`]: #method.as_bytes_fixed_len
@@ -266,12 +270,12 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// let fixed_len: &[u8; 10] = date.as_bytes_fixed_len();
     /// assert_eq!(fixed_len, b"2001-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -279,7 +283,7 @@ impl FullDateStr {
         debug_assert_eq!(
             self.len(),
             FULL_DATE_LEN,
-            "FullDateStr must always be 10 bytes"
+            "Ymd8HyphenStr must always be 10 bytes"
         );
 
         let ptr = self.0.as_ptr() as *const [u8; FULL_DATE_LEN];
@@ -292,11 +296,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.year_str(), "2001");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -309,12 +313,12 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// let year_fixed_len: &[u8; 4] = date.year_bytes_fixed_len();
     /// assert_eq!(year_fixed_len, b"2001");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -322,7 +326,7 @@ impl FullDateStr {
         // Using `self.0` instead of `self.0[YEAR_RANGE]` because
         // `.as_ptr()` returns the same address.
         let ptr = self.0.as_ptr() as *const [u8; 4];
-        // This must be always safe because the string is valid `full-date` string.
+        // This must be always safe because the string is valid RFC 3339 `full-date` string.
         unsafe { &*ptr }
     }
 
@@ -338,7 +342,7 @@ impl FullDateStr {
         // Using `self.0` instead of `self.0[YEAR_RANGE]` because
         // `.as_ptr()` returns the same address.
         let ptr = self.0.as_mut_ptr() as *mut [u8; 4];
-        // This must be always safe because the string is valid `full-date` string.
+        // This must be always safe because the string is valid RFC 3339 `full-date` string.
         &mut *ptr
     }
 
@@ -347,11 +351,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.year(), 2001);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -364,11 +368,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.month_str(), "12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -381,18 +385,18 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// let month_fixed_len: &[u8; 2] = date.month_bytes_fixed_len();
     /// assert_eq!(month_fixed_len, b"12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
     pub fn month_bytes_fixed_len(&self) -> &[u8; 2] {
         let ptr = self.0[MONTH_RANGE].as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid `full-date` string.
+        // This must be always safe because the string is valid RFC 3339 `full-date` string.
         unsafe { &*ptr }
     }
 
@@ -406,7 +410,7 @@ impl FullDateStr {
     #[must_use]
     unsafe fn month_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         let ptr = self.0[MONTH_RANGE].as_mut_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid `full-date` string.
+        // This must be always safe because the string is valid RFC 3339 `full-date` string.
         &mut *ptr
     }
 
@@ -415,11 +419,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.month1(), 12);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -432,11 +436,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.month0(), 11);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -449,11 +453,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.mday_str(), "31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -466,18 +470,18 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// let mday_fixed_len: &[u8; 2] = date.mday_bytes_fixed_len();
     /// assert_eq!(mday_fixed_len, b"31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
     pub fn mday_bytes_fixed_len(&self) -> &[u8; 2] {
         let ptr = self.0[MDAY_RANGE].as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid `full-date` string.
+        // This must be always safe because the string is valid RFC 3339 `full-date` string.
         unsafe { &*ptr }
     }
 
@@ -491,7 +495,7 @@ impl FullDateStr {
     #[must_use]
     unsafe fn mday_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         let ptr = self.0[MDAY_RANGE].as_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid `full-date` string.
+        // This must be always safe because the string is valid RFC 3339 `full-date` string.
         &mut *ptr
     }
 
@@ -500,11 +504,11 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
-    /// let date = FullDateStr::from_str("2001-12-31")?;
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.mday(), 31);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -522,18 +526,18 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2000-02-29";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2000-02-29");
     ///
     /// date.set_year(2004)?;
     /// assert_eq!(date.as_str(), "2004-02-29");
     ///
     /// assert!(date.set_year(2001).is_err(), "2001-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_year(&mut self, year: u16) -> Result<(), ValidationError> {
+    pub fn set_year(&mut self, year: u16) -> Result<(), Error> {
         if year > 9999 {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Year).into());
         }
@@ -559,18 +563,18 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2001-12-31";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2001-12-31");
     ///
     /// date.set_month0(7)?;
     /// assert_eq!(date.as_str(), "2001-08-31");
     ///
     /// assert!(date.set_month0(8).is_err(), "2001-09-31 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_month0(&mut self, month0: u8) -> Result<(), ValidationError> {
+    pub fn set_month0(&mut self, month0: u8) -> Result<(), Error> {
         if month0 >= 12 {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Month).into());
         }
@@ -596,19 +600,19 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2001-12-31";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2001-12-31");
     ///
     /// date.set_month1(8)?;
     /// assert_eq!(date.as_str(), "2001-08-31");
     ///
     /// assert!(date.set_month1(9).is_err(), "2001-09-31 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn set_month1(&mut self, month1: u8) -> Result<(), ValidationError> {
+    pub fn set_month1(&mut self, month1: u8) -> Result<(), Error> {
         self.set_month0(month1.wrapping_sub(1))
     }
 
@@ -621,18 +625,18 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2001-02-28";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2001-02-28");
     ///
     /// date.set_mday(3)?;
     /// assert_eq!(date.as_str(), "2001-02-03");
     ///
     /// assert!(date.set_mday(29).is_err(), "2001-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_mday(&mut self, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_mday(&mut self, mday: u8) -> Result<(), Error> {
         validate_ym1d(self.year(), self.month1(), mday)?;
         unsafe {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
@@ -655,18 +659,18 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2001-02-28";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2001-02-28");
     ///
     /// date.set_month0_mday(3, 23)?;
     /// assert_eq!(date.as_str(), "2001-04-23");
     ///
     /// assert!(date.set_month0_mday(1, 29).is_err(), "2001-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_month0_mday(&mut self, month0: u8, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_month0_mday(&mut self, month0: u8, mday: u8) -> Result<(), Error> {
         validate_ym0d(self.year(), month0, mday)?;
         unsafe {
             // This is safe because `write_digit2()` fills the slices with ASCII digits.
@@ -690,18 +694,18 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2001-02-28";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2001-02-28");
     ///
     /// date.set_month1_mday(4, 23)?;
     /// assert_eq!(date.as_str(), "2001-04-23");
     ///
     /// assert!(date.set_month1_mday(2, 29).is_err(), "2001-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_month1_mday(&mut self, month1: u8, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_month1_mday(&mut self, month1: u8, mday: u8) -> Result<(), Error> {
         validate_ym1d(self.year(), month1, mday)?;
         unsafe {
             // This is safe because `write_digit2()` fills the slices with ASCII digits.
@@ -726,18 +730,18 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2001-02-28";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2001-02-28");
     ///
     /// date.set_ym0d(1999, 3, 23)?;
     /// assert_eq!(date.as_str(), "1999-04-23");
     ///
     /// assert!(date.set_ym0d(1999, 1, 29).is_err(), "1999-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_ym0d(&mut self, year: u16, month0: u8, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_ym0d(&mut self, year: u16, month0: u8, mday: u8) -> Result<(), Error> {
         validate_ym0d(year, month0, mday)?;
         unsafe {
             // This is safe because `write_digit2()` and `write_digit4()` fill
@@ -764,26 +768,26 @@ impl FullDateStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateStr;
+    /// # use datetime_string::common::Ymd8HyphenStr;
     /// let mut buf: [u8; 10] = *b"2001-02-28";
-    /// let date = FullDateStr::from_bytes_mut(&mut buf[..])?;
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(date.as_str(), "2001-02-28");
     ///
     /// date.set_ym1d(1999, 4, 23)?;
     /// assert_eq!(date.as_str(), "1999-04-23");
     ///
     /// assert!(date.set_ym1d(1999, 2, 29).is_err(), "1999-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn set_ym1d(&mut self, year: u16, month1: u8, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_ym1d(&mut self, year: u16, month1: u8, mday: u8) -> Result<(), Error> {
         self.set_ym0d(year, month1.wrapping_sub(1), mday)
     }
 }
 
 #[cfg(feature = "alloc")]
-impl alloc::borrow::ToOwned for FullDateStr {
-    type Owned = FullDateString;
+impl alloc::borrow::ToOwned for Ymd8HyphenStr {
+    type Owned = Ymd8HyphenString;
 
     #[inline]
     fn to_owned(&self) -> Self::Owned {
@@ -791,94 +795,94 @@ impl alloc::borrow::ToOwned for FullDateStr {
     }
 }
 
-impl AsRef<[u8]> for FullDateStr {
+impl AsRef<[u8]> for Ymd8HyphenStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-impl AsRef<str> for FullDateStr {
+impl AsRef<str> for Ymd8HyphenStr {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl AsRef<FullDateStr> for FullDateStr {
+impl AsRef<Ymd8HyphenStr> for Ymd8HyphenStr {
     #[inline]
-    fn as_ref(&self) -> &FullDateStr {
+    fn as_ref(&self) -> &Ymd8HyphenStr {
         self
     }
 }
 
-impl<'a> From<&'a FullDateStr> for &'a str {
+impl<'a> From<&'a Ymd8HyphenStr> for &'a str {
     #[inline]
-    fn from(v: &'a FullDateStr) -> Self {
+    fn from(v: &'a Ymd8HyphenStr) -> Self {
         v.as_str()
     }
 }
 
-impl<'a> TryFrom<&'a [u8]> for &'a FullDateStr {
-    type Error = ValidationError;
+impl<'a> TryFrom<&'a [u8]> for &'a Ymd8HyphenStr {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
         validate_bytes(v)?;
         Ok(unsafe {
-            // This is safe because a valid `full-date` string is also an ASCII string.
-            FullDateStr::from_bytes_unchecked(v)
+            // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
+            Ymd8HyphenStr::from_bytes_unchecked(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a mut [u8]> for &'a mut FullDateStr {
-    type Error = ValidationError;
+impl<'a> TryFrom<&'a mut [u8]> for &'a mut Ymd8HyphenStr {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
         validate_bytes(v)?;
         Ok(unsafe {
-            // This is safe because a valid `full-date` string is also an ASCII string.
-            FullDateStr::from_bytes_unchecked_mut(v)
+            // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
+            Ymd8HyphenStr::from_bytes_unchecked_mut(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a str> for &'a FullDateStr {
-    type Error = ValidationError;
+impl<'a> TryFrom<&'a str> for &'a Ymd8HyphenStr {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
-            // This is safe because a valid `full-date` string is also an ASCII string.
-            FullDateStr::from_str_unchecked(v)
+            // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
+            Ymd8HyphenStr::from_str_unchecked(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a mut str> for &'a mut FullDateStr {
-    type Error = ValidationError;
+impl<'a> TryFrom<&'a mut str> for &'a mut Ymd8HyphenStr {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
-            // This is safe because a valid `full-date` string is also an ASCII string.
-            FullDateStr::from_str_unchecked_mut(v)
+            // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
+            Ymd8HyphenStr::from_str_unchecked_mut(v)
         })
     }
 }
 
-impl fmt::Display for FullDateStr {
+impl fmt::Display for Ymd8HyphenStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl ops::Deref for FullDateStr {
+impl ops::Deref for Ymd8HyphenStr {
     type Target = str;
 
     #[inline]
@@ -887,36 +891,38 @@ impl ops::Deref for FullDateStr {
     }
 }
 
-impl_cmp_symmetric!(str, FullDateStr, &FullDateStr);
-impl_cmp_symmetric!([u8], FullDateStr, [u8]);
-impl_cmp_symmetric!([u8], FullDateStr, &[u8]);
-impl_cmp_symmetric!([u8], &FullDateStr, [u8]);
-impl_cmp_symmetric!(str, FullDateStr, str);
-impl_cmp_symmetric!(str, FullDateStr, &str);
-impl_cmp_symmetric!(str, &FullDateStr, str);
+impl_cmp_symmetric!(str, Ymd8HyphenStr, &Ymd8HyphenStr);
+impl_cmp_symmetric!([u8], Ymd8HyphenStr, [u8]);
+impl_cmp_symmetric!([u8], Ymd8HyphenStr, &[u8]);
+impl_cmp_symmetric!([u8], &Ymd8HyphenStr, [u8]);
+impl_cmp_symmetric!(str, Ymd8HyphenStr, str);
+impl_cmp_symmetric!(str, Ymd8HyphenStr, &str);
+impl_cmp_symmetric!(str, &Ymd8HyphenStr, str);
 
-/// RFC 3339 [`full-date`] owned string.
+/// Owned string in `YYYY-MM-DD` format.
+///
+/// This is also an RFC 3339 [`full-date`] string.
 ///
 /// This is a fixed length string, and implements [`Copy`] trait.
 ///
 /// To create a value of this type, use [`<str>::parse()`] method or
-/// [`std::convert::TryFrom`] trait, or convert from `&FullDateStr`.
+/// [`std::convert::TryFrom`] trait, or convert from `&Ymd8HyphenStr`.
 ///
 /// # Examples
 ///
 /// ```
-/// # use datetime_string::rfc3339::FullDateString;
-/// use datetime_string::rfc3339::FullDateStr;
+/// # use datetime_string::common::Ymd8HyphenString;
+/// use datetime_string::common::Ymd8HyphenStr;
 /// use std::convert::TryFrom;
 ///
-/// let try_from = FullDateString::try_from("2001-12-31")?;
+/// let try_from = Ymd8HyphenString::try_from("2001-12-31")?;
 ///
-/// let parse = "2001-12-31".parse::<FullDateString>()?;
-/// let parse2: FullDateString = "2001-12-31".parse()?;
+/// let parse = "2001-12-31".parse::<Ymd8HyphenString>()?;
+/// let parse2: Ymd8HyphenString = "2001-12-31".parse()?;
 ///
-/// let to_owned = FullDateStr::from_str("2001-12-31")?.to_owned();
-/// let into: FullDateString = FullDateStr::from_str("2001-12-31")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// let to_owned = Ymd8HyphenStr::from_str("2001-12-31")?.to_owned();
+/// let into: Ymd8HyphenString = Ymd8HyphenStr::from_str("2001-12-31")?.into();
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -929,10 +935,10 @@ impl_cmp_symmetric!(str, &FullDateStr, str);
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct FullDateString([u8; FULL_DATE_LEN]);
+pub struct Ymd8HyphenString([u8; FULL_DATE_LEN]);
 
-impl FullDateString {
-    /// Creates a `FullDateString` from the given bytes.
+impl Ymd8HyphenString {
+    /// Creates a `Ymd8HyphenString` from the given bytes.
     ///
     /// # Safety
     ///
@@ -943,110 +949,110 @@ impl FullDateString {
         Self(s)
     }
 
-    /// Returns a `&FullDateStr` for the string.
+    /// Returns a `&Ymd8HyphenStr` for the string.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateString;
-    /// use datetime_string::rfc3339::FullDateStr;
-    /// let date = "2001-12-31".parse::<FullDateString>()?;
+    /// # use datetime_string::common::Ymd8HyphenString;
+    /// use datetime_string::common::Ymd8HyphenStr;
+    /// let date = "2001-12-31".parse::<Ymd8HyphenString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
-    /// // `Deref<Target = FullDateStr>` trait is implemented.
-    /// let _: &FullDateStr = date.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// // `Deref<Target = Ymd8HyphenStr>` trait is implemented.
+    /// let _: &Ymd8HyphenStr = date.as_deref();
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_deref(&self) -> &FullDateStr {
+    pub fn as_deref(&self) -> &Ymd8HyphenStr {
         unsafe {
-            // This is safe because `self.0` is valid `full-date` string.
-            FullDateStr::from_bytes_unchecked(&self.0)
+            // This is safe because `self.0` is valid RFC 3339 `full-date` string.
+            Ymd8HyphenStr::from_bytes_unchecked(&self.0)
         }
     }
 
-    /// Returns a `&mut FullDateStr` for the string.
+    /// Returns a `&mut Ymd8HyphenStr` for the string.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::FullDateString;
-    /// use datetime_string::rfc3339::FullDateStr;
-    /// let mut date = "2001-12-31".parse::<FullDateString>()?;
+    /// # use datetime_string::common::Ymd8HyphenString;
+    /// use datetime_string::common::Ymd8HyphenStr;
+    /// let mut date = "2001-12-31".parse::<Ymd8HyphenString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
-    /// let _: &mut FullDateStr = date.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// let _: &mut Ymd8HyphenStr = date.as_deref_mut();
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_deref_mut(&mut self) -> &mut FullDateStr {
+    pub fn as_deref_mut(&mut self) -> &mut Ymd8HyphenStr {
         unsafe {
-            // This is safe because `self.0` is valid `full-date` string.
-            FullDateStr::from_bytes_unchecked_mut(&mut self.0)
+            // This is safe because `self.0` is valid RFC 3339 `full-date` string.
+            Ymd8HyphenStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
 }
 
-impl core::borrow::Borrow<FullDateStr> for FullDateString {
+impl core::borrow::Borrow<Ymd8HyphenStr> for Ymd8HyphenString {
     #[inline]
-    fn borrow(&self) -> &FullDateStr {
+    fn borrow(&self) -> &Ymd8HyphenStr {
         self.as_deref()
     }
 }
 
-impl core::borrow::BorrowMut<FullDateStr> for FullDateString {
+impl core::borrow::BorrowMut<Ymd8HyphenStr> for Ymd8HyphenString {
     #[inline]
-    fn borrow_mut(&mut self) -> &mut FullDateStr {
+    fn borrow_mut(&mut self) -> &mut Ymd8HyphenStr {
         self.as_deref_mut()
     }
 }
 
-impl AsRef<[u8]> for FullDateString {
+impl AsRef<[u8]> for Ymd8HyphenString {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-impl AsRef<str> for FullDateString {
+impl AsRef<str> for Ymd8HyphenString {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl AsRef<FullDateStr> for FullDateString {
+impl AsRef<Ymd8HyphenStr> for Ymd8HyphenString {
     #[inline]
-    fn as_ref(&self) -> &FullDateStr {
+    fn as_ref(&self) -> &Ymd8HyphenStr {
         self
     }
 }
 
 #[cfg(feature = "alloc")]
-impl From<FullDateString> for Vec<u8> {
+impl From<Ymd8HyphenString> for Vec<u8> {
     #[inline]
-    fn from(v: FullDateString) -> Vec<u8> {
+    fn from(v: Ymd8HyphenString) -> Vec<u8> {
         (*v.as_bytes_fixed_len()).into()
     }
 }
 
 #[cfg(feature = "alloc")]
-impl From<FullDateString> for String {
+impl From<Ymd8HyphenString> for String {
     #[inline]
-    fn from(v: FullDateString) -> String {
+    fn from(v: Ymd8HyphenString) -> String {
         let vec: Vec<u8> = (*v.as_bytes_fixed_len()).into();
         unsafe {
-            // This is safe because a valid `full-date` string is also an ASCII string.
+            // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
             String::from_utf8_unchecked(vec)
         }
     }
 }
 
-impl From<&FullDateStr> for FullDateString {
-    fn from(v: &FullDateStr) -> Self {
+impl From<&Ymd8HyphenStr> for Ymd8HyphenString {
+    fn from(v: &Ymd8HyphenStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
             Self::new_unchecked(*v.as_bytes_fixed_len())
@@ -1054,26 +1060,26 @@ impl From<&FullDateStr> for FullDateString {
     }
 }
 
-impl TryFrom<&[u8]> for FullDateString {
-    type Error = ValidationError;
+impl TryFrom<&[u8]> for Ymd8HyphenString {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
-        FullDateStr::from_bytes(v).map(Into::into)
+        Ymd8HyphenStr::from_bytes(v).map(Into::into)
     }
 }
 
-impl TryFrom<&str> for FullDateString {
-    type Error = ValidationError;
+impl TryFrom<&str> for Ymd8HyphenString {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
-        FullDateStr::from_str(v).map(Into::into)
+        Ymd8HyphenStr::from_str(v).map(Into::into)
     }
 }
 
-impl TryFrom<[u8; 10]> for FullDateString {
-    type Error = ValidationError;
+impl TryFrom<[u8; 10]> for Ymd8HyphenString {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: [u8; 10]) -> Result<Self, Self::Error> {
@@ -1085,15 +1091,15 @@ impl TryFrom<[u8; 10]> for FullDateString {
     }
 }
 
-impl fmt::Display for FullDateString {
+impl fmt::Display for Ymd8HyphenString {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_deref().fmt(f)
     }
 }
 
-impl ops::Deref for FullDateString {
-    type Target = FullDateStr;
+impl ops::Deref for Ymd8HyphenString {
+    type Target = Ymd8HyphenStr;
 
     #[inline]
     fn deref(&self) -> &Self::Target {
@@ -1101,15 +1107,15 @@ impl ops::Deref for FullDateString {
     }
 }
 
-impl ops::DerefMut for FullDateString {
+impl ops::DerefMut for Ymd8HyphenString {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_deref_mut()
     }
 }
 
-impl str::FromStr for FullDateString {
-    type Err = ValidationError;
+impl str::FromStr for Ymd8HyphenString {
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -1117,18 +1123,18 @@ impl str::FromStr for FullDateString {
     }
 }
 
-impl_cmp_symmetric!(FullDateStr, FullDateString, &FullDateString);
-impl_cmp_symmetric!(FullDateStr, FullDateString, FullDateStr);
-impl_cmp_symmetric!(FullDateStr, FullDateString, &FullDateStr);
-impl_cmp_symmetric!(str, FullDateString, str);
-impl_cmp_symmetric!(str, FullDateString, &str);
-impl_cmp_symmetric!(str, &FullDateString, str);
-impl_cmp_symmetric!([u8], FullDateString, [u8]);
-impl_cmp_symmetric!([u8], FullDateString, &[u8]);
-impl_cmp_symmetric!([u8], &FullDateString, [u8]);
+impl_cmp_symmetric!(Ymd8HyphenStr, Ymd8HyphenString, &Ymd8HyphenString);
+impl_cmp_symmetric!(Ymd8HyphenStr, Ymd8HyphenString, Ymd8HyphenStr);
+impl_cmp_symmetric!(Ymd8HyphenStr, Ymd8HyphenString, &Ymd8HyphenStr);
+impl_cmp_symmetric!(str, Ymd8HyphenString, str);
+impl_cmp_symmetric!(str, Ymd8HyphenString, &str);
+impl_cmp_symmetric!(str, &Ymd8HyphenString, str);
+impl_cmp_symmetric!([u8], Ymd8HyphenString, [u8]);
+impl_cmp_symmetric!([u8], Ymd8HyphenString, &[u8]);
+impl_cmp_symmetric!([u8], &Ymd8HyphenString, [u8]);
 
 #[cfg(feature = "serde")]
-impl Serialize for FullDateString {
+impl Serialize for Ymd8HyphenString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -1144,15 +1150,15 @@ mod serde_ {
 
     use serde::de::{Deserialize, Deserializer, Visitor};
 
-    /// Visitor for `&FullDateStr`.
+    /// Visitor for `&Ymd8HyphenStr`.
     struct StrVisitor;
 
     impl<'de> Visitor<'de> for StrVisitor {
-        type Value = &'de FullDateStr;
+        type Value = &'de Ymd8HyphenStr;
 
         #[inline]
         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            f.write_str("RFC 3339 full-date string")
+            f.write_str("YYYY-MM-DD date string")
         }
 
         #[inline]
@@ -1172,7 +1178,7 @@ mod serde_ {
         }
     }
 
-    impl<'de> Deserialize<'de> for &'de FullDateStr {
+    impl<'de> Deserialize<'de> for &'de Ymd8HyphenStr {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1181,15 +1187,15 @@ mod serde_ {
         }
     }
 
-    /// Visitor for `FullDateString`.
+    /// Visitor for `Ymd8HyphenString`.
     struct StringVisitor;
 
     impl<'de> Visitor<'de> for StringVisitor {
-        type Value = FullDateString;
+        type Value = Ymd8HyphenString;
 
         #[inline]
         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            f.write_str("RFC 3339 full-date string")
+            f.write_str("YYYY-MM-DD date string")
         }
 
         #[inline]
@@ -1209,7 +1215,7 @@ mod serde_ {
         }
     }
 
-    impl<'de> Deserialize<'de> for FullDateString {
+    impl<'de> Deserialize<'de> for Ymd8HyphenString {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1289,7 +1295,7 @@ mod tests {
     fn ser_de_str() {
         let raw: &'static str = "2001-12-31";
         assert_tokens(
-            &FullDateStr::from_str(raw).unwrap(),
+            &Ymd8HyphenStr::from_str(raw).unwrap(),
             &[Token::BorrowedStr(raw)],
         );
     }
@@ -1298,7 +1304,10 @@ mod tests {
     #[test]
     fn ser_de_string() {
         let raw: &'static str = "2001-12-31";
-        assert_tokens(&FullDateString::try_from(raw).unwrap(), &[Token::Str(raw)]);
+        assert_tokens(
+            &Ymd8HyphenString::try_from(raw).unwrap(),
+            &[Token::Str(raw)],
+        );
     }
 
     #[cfg(feature = "serde")]
@@ -1306,7 +1315,7 @@ mod tests {
     fn de_bytes_slice() {
         let raw: &'static [u8; 10] = b"2001-12-31";
         assert_de_tokens(
-            &FullDateStr::from_bytes(raw).unwrap(),
+            &Ymd8HyphenStr::from_bytes(raw).unwrap(),
             &[Token::BorrowedBytes(raw)],
         );
     }
@@ -1316,7 +1325,7 @@ mod tests {
     fn de_bytes() {
         let raw: &'static [u8; 10] = b"2001-12-31";
         assert_de_tokens(
-            &FullDateString::try_from(&raw[..]).unwrap(),
+            &Ymd8HyphenString::try_from(&raw[..]).unwrap(),
             &[Token::Bytes(raw)],
         );
     }

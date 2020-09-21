@@ -1,4 +1,6 @@
-//! RFC 3339 [`partial-time`] string types without `secfrac` part.
+//! `%H:%M:%S` (`hh:mm:ss`) time string, such as `01:23:45`.
+//!
+//! This is also an RFC 3339 [`partial-time`] string without `secfrac` part.
 //!
 //! [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
@@ -18,7 +20,7 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{ComponentKind, ErrorKind, ValidationError};
+use crate::error::{ComponentKind, Error, ErrorKind};
 
 /// Length of `hh:mm:ss` string.
 const HMS_LEN: usize = 8;
@@ -37,9 +39,9 @@ const MINUTE_MAX: u8 = 59;
 /// Note that a leap second is always allowed.
 const SECOND_MAX: u8 = 60;
 
-/// Validates the given string as an RFC 3339 [`partial-time`] string without `secfrac` part.
+/// Validates the given `%H:%M:%S` string.
 ///
-/// In other words, this string can contain `hh:mm:ss`-style datetime string.
+/// In other words, this string can contain an RFC 3339 [`partial-time`] string without `secfrac` part.
 ///
 /// This type allows leap seconds unconditionally, because leap seconds are
 /// irregular and cannot predict, and date and timezone is also necessary to
@@ -48,7 +50,7 @@ const SECOND_MAX: u8 = 60;
 /// will happen, if the "second" component is 60.
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
-fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
+fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     let s: &[u8; HMS_LEN] = match s.len().cmp(&HMS_LEN) {
         Ordering::Greater => return Err(ErrorKind::TooLong.into()),
         Ordering::Less => return Err(ErrorKind::TooShort.into()),
@@ -92,7 +94,9 @@ fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
     Ok(())
 }
 
-/// RFC 3339 [`partial-time`] string slice without secfrac part.
+/// String slice in `%H:%M:%S` (`hh:mm:ss`) format.
+///
+/// This is also an RFC 3339 [`partial-time`] string without `secfrac` part.
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -104,10 +108,10 @@ fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct HhmmssStr(str);
+pub struct Hms6ColonStr(str);
 
-impl HhmmssStr {
-    /// Creates a `&HhmmssStr` from the given byte slice.
+impl Hms6ColonStr {
+    /// Creates a `&Hms6ColonStr` from the given byte slice.
     ///
     /// # Safety
     ///
@@ -118,7 +122,7 @@ impl HhmmssStr {
         Self::from_str_unchecked(str::from_utf8_unchecked(s))
     }
 
-    /// Creates a `&mut HhmmssStr` from the given mutable byte slice.
+    /// Creates a `&mut Hms6ColonStr` from the given mutable byte slice.
     ///
     /// # Safety
     ///
@@ -129,7 +133,7 @@ impl HhmmssStr {
         Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
     }
 
-    /// Creates a `&HhmmssStr` from the given string slice.
+    /// Creates a `&Hms6ColonStr` from the given string slice.
     ///
     /// # Safety
     ///
@@ -137,10 +141,10 @@ impl HhmmssStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const HhmmssStr)
+        &*(s as *const str as *const Hms6ColonStr)
     }
 
-    /// Creates a `&mut HhmmssStr` from the given mutable string slice.
+    /// Creates a `&mut Hms6ColonStr` from the given mutable string slice.
     ///
     /// # Safety
     ///
@@ -148,96 +152,96 @@ impl HhmmssStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut HhmmssStr)
+        &mut *(s as *mut str as *mut Hms6ColonStr)
     }
 
-    /// Creates a new `&HhmmssStr` from a string slice.
+    /// Creates a new `&Hms6ColonStr` from a string slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
-    /// assert!(HhmmssStr::from_str("00:00:00").is_ok());
-    /// assert!(HhmmssStr::from_str("23:59:59").is_ok());
-    /// assert!(HhmmssStr::from_str("23:59:60").is_ok(), "Leap second is always allowed");
+    /// assert!(Hms6ColonStr::from_str("00:00:00").is_ok());
+    /// assert!(Hms6ColonStr::from_str("23:59:59").is_ok());
+    /// assert!(Hms6ColonStr::from_str("23:59:60").is_ok(), "Leap second is always allowed");
     ///
-    /// assert!(HhmmssStr::from_str("24:00:00").is_err(), "Invalid hour");
-    /// assert!(HhmmssStr::from_str("00:60:00").is_err(), "Invalid minute");
-    /// assert!(HhmmssStr::from_str("00:00:61").is_err(), "Invalid second");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// assert!(Hms6ColonStr::from_str("24:00:00").is_err(), "Invalid hour");
+    /// assert!(Hms6ColonStr::from_str("00:60:00").is_err(), "Invalid minute");
+    /// assert!(Hms6ColonStr::from_str("00:00:61").is_err(), "Invalid second");
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     // `FromStr` trait cannot be implemented for a slice.
     #[allow(clippy::should_implement_trait)]
-    pub fn from_str(s: &str) -> Result<&Self, ValidationError> {
+    pub fn from_str(s: &str) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&mut HhmmssStr` from a mutable string slice.
+    /// Creates a new `&mut Hms6ColonStr` from a mutable string slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
+    /// # use datetime_string::common::Hms6ColonStr;
     /// let mut buf = "12:34:56".to_owned();
-    /// let time = HhmmssStr::from_mut_str(&mut buf)?;
+    /// let time = Hms6ColonStr::from_mut_str(&mut buf)?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
     /// time.set_hour(0)?;
     /// assert_eq!(time.as_str(), "00:34:56");
     ///
     /// assert_eq!(buf, "00:34:56");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, ValidationError> {
+    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&HhmmssStr` from a byte slice.
+    /// Creates a new `&Hms6ColonStr` from a byte slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_bytes(b"12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_bytes(b"12:34:56")?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
-    /// assert!(HhmmssStr::from_bytes(b"00:00:00").is_ok());
-    /// assert!(HhmmssStr::from_bytes(b"23:59:59").is_ok());
-    /// assert!(HhmmssStr::from_bytes(b"23:59:60").is_ok(), "Leap second is always allowed");
+    /// assert!(Hms6ColonStr::from_bytes(b"00:00:00").is_ok());
+    /// assert!(Hms6ColonStr::from_bytes(b"23:59:59").is_ok());
+    /// assert!(Hms6ColonStr::from_bytes(b"23:59:60").is_ok(), "Leap second is always allowed");
     ///
-    /// assert!(HhmmssStr::from_bytes(b"24:00:00").is_err(), "Invalid hour");
-    /// assert!(HhmmssStr::from_bytes(b"00:60:00").is_err(), "Invalid minute");
-    /// assert!(HhmmssStr::from_bytes(b"00:00:61").is_err(), "Invalid second");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// assert!(Hms6ColonStr::from_bytes(b"24:00:00").is_err(), "Invalid hour");
+    /// assert!(Hms6ColonStr::from_bytes(b"00:60:00").is_err(), "Invalid minute");
+    /// assert!(Hms6ColonStr::from_bytes(b"00:00:61").is_err(), "Invalid second");
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes(s: &[u8]) -> Result<&Self, ValidationError> {
+    pub fn from_bytes(s: &[u8]) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&mut HhmmssStr` from a mutable byte slice.
+    /// Creates a new `&mut Hms6ColonStr` from a mutable byte slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
+    /// # use datetime_string::common::Hms6ColonStr;
     /// let mut buf: [u8; 8] = *b"12:34:56";
-    /// let time = HhmmssStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
     /// time.set_hour(0)?;
     /// assert_eq!(time.as_str(), "00:34:56");
     ///
     /// assert_eq!(&buf[..], b"00:34:56");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, ValidationError> {
+    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -246,11 +250,11 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// assert_eq!(time.as_str(), "12:34:56");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -265,11 +269,11 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_bytes(b"12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_bytes(b"12:34:56")?;
     ///
     /// assert_eq!(time.as_bytes(), b"12:34:56");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`as_bytes_fixed_len`]: #method.as_bytes_fixed_len
@@ -284,17 +288,17 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// let fixed_len: &[u8; 8] = time.as_bytes_fixed_len();
     /// assert_eq!(fixed_len, b"12:34:56");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
     pub fn as_bytes_fixed_len(&self) -> &[u8; 8] {
-        debug_assert_eq!(self.len(), HMS_LEN, "HhmmssStr must always be 8 bytes");
+        debug_assert_eq!(self.len(), HMS_LEN, "Hms6ColonStr must always be 8 bytes");
 
         let ptr = self.0.as_ptr() as *const [u8; HMS_LEN];
         // This must be always safe because the length is already checked.
@@ -306,11 +310,11 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// assert_eq!(time.hour_str(), "12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -323,12 +327,12 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// let hour_fixed_len: &[u8; 2] = time.hour_bytes_fixed_len();
     /// assert_eq!(hour_fixed_len, b"12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -361,11 +365,11 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// assert_eq!(time.hour(), 12);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -378,11 +382,11 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// assert_eq!(time.minute_str(), "34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -395,12 +399,12 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// let minute_fixed_len: &[u8; 2] = time.minute_bytes_fixed_len();
     /// assert_eq!(minute_fixed_len, b"34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -429,11 +433,11 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// assert_eq!(time.minute(), 34);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -446,11 +450,11 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// assert_eq!(time.second_str(), "56");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -463,12 +467,12 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// let second_fixed_len: &[u8; 2] = time.second_bytes_fixed_len();
     /// assert_eq!(second_fixed_len, b"56");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -497,11 +501,11 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
-    /// let time = HhmmssStr::from_str("12:34:56")?;
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
     ///
     /// assert_eq!(time.second(), 56);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -518,18 +522,18 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
+    /// # use datetime_string::common::Hms6ColonStr;
     /// let mut buf: [u8; 8] = *b"12:34:56";
-    /// let time = HhmmssStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
     /// time.set_hour(0)?;
     /// assert_eq!(time.as_str(), "00:34:56");
     ///
     /// assert!(time.set_hour(24).is_err(), "24:34:56 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_hour(&mut self, hour: u8) -> Result<(), ValidationError> {
+    pub fn set_hour(&mut self, hour: u8) -> Result<(), Error> {
         if hour > HOUR_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Hour).into());
         }
@@ -550,18 +554,18 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
+    /// # use datetime_string::common::Hms6ColonStr;
     /// let mut buf: [u8; 8] = *b"12:34:56";
-    /// let time = HhmmssStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
     /// time.set_minute(0)?;
     /// assert_eq!(time.as_str(), "12:00:56");
     ///
     /// assert!(time.set_minute(60).is_err(), "24:60:56 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_minute(&mut self, minute: u8) -> Result<(), ValidationError> {
+    pub fn set_minute(&mut self, minute: u8) -> Result<(), Error> {
         if minute > MINUTE_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Minute).into());
         }
@@ -582,18 +586,18 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
+    /// # use datetime_string::common::Hms6ColonStr;
     /// let mut buf: [u8; 8] = *b"12:34:56";
-    /// let time = HhmmssStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
     /// time.set_second(0)?;
     /// assert_eq!(time.as_str(), "12:34:00");
     ///
     /// assert!(time.set_second(61).is_err(), "24:34:61 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_second(&mut self, second: u8) -> Result<(), ValidationError> {
+    pub fn set_second(&mut self, second: u8) -> Result<(), Error> {
         if second > SECOND_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Second).into());
         }
@@ -614,18 +618,18 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
+    /// # use datetime_string::common::Hms6ColonStr;
     /// let mut buf: [u8; 8] = *b"12:34:56";
-    /// let time = HhmmssStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
     /// time.set_hour_minute(21, 10)?;
     /// assert_eq!(time.as_str(), "21:10:56");
     ///
     /// assert!(time.set_hour_minute(23, 60).is_err(), "23:60:56 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_hour_minute(&mut self, hour: u8, minute: u8) -> Result<(), ValidationError> {
+    pub fn set_hour_minute(&mut self, hour: u8, minute: u8) -> Result<(), Error> {
         if hour > HOUR_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Hour).into());
         }
@@ -650,18 +654,18 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
+    /// # use datetime_string::common::Hms6ColonStr;
     /// let mut buf: [u8; 8] = *b"12:34:56";
-    /// let time = HhmmssStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
     /// time.set_minute_second(54, 32)?;
     /// assert_eq!(time.as_str(), "12:54:32");
     ///
     /// assert!(time.set_minute_second(60, 59).is_err(), "12:60:59 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_minute_second(&mut self, minute: u8, second: u8) -> Result<(), ValidationError> {
+    pub fn set_minute_second(&mut self, minute: u8, second: u8) -> Result<(), Error> {
         if minute > MINUTE_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Minute).into());
         }
@@ -686,18 +690,18 @@ impl HhmmssStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssStr;
+    /// # use datetime_string::common::Hms6ColonStr;
     /// let mut buf: [u8; 8] = *b"12:34:56";
-    /// let time = HhmmssStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "12:34:56");
     ///
     /// time.set_time(23, 12, 1)?;
     /// assert_eq!(time.as_str(), "23:12:01");
     ///
     /// assert!(time.set_time(24, 0, 0).is_err(), "24:00:00 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_time(&mut self, hour: u8, minute: u8, second: u8) -> Result<(), ValidationError> {
+    pub fn set_time(&mut self, hour: u8, minute: u8, second: u8) -> Result<(), Error> {
         if hour > HOUR_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Hour).into());
         }
@@ -719,8 +723,8 @@ impl HhmmssStr {
 }
 
 #[cfg(feature = "alloc")]
-impl alloc::borrow::ToOwned for HhmmssStr {
-    type Owned = HhmmssString;
+impl alloc::borrow::ToOwned for Hms6ColonStr {
+    type Owned = Hms6ColonString;
 
     #[inline]
     fn to_owned(&self) -> Self::Owned {
@@ -728,94 +732,94 @@ impl alloc::borrow::ToOwned for HhmmssStr {
     }
 }
 
-impl AsRef<[u8]> for HhmmssStr {
+impl AsRef<[u8]> for Hms6ColonStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-impl AsRef<str> for HhmmssStr {
+impl AsRef<str> for Hms6ColonStr {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl AsRef<HhmmssStr> for HhmmssStr {
+impl AsRef<Hms6ColonStr> for Hms6ColonStr {
     #[inline]
-    fn as_ref(&self) -> &HhmmssStr {
+    fn as_ref(&self) -> &Hms6ColonStr {
         self
     }
 }
 
-impl<'a> From<&'a HhmmssStr> for &'a str {
+impl<'a> From<&'a Hms6ColonStr> for &'a str {
     #[inline]
-    fn from(v: &'a HhmmssStr) -> Self {
+    fn from(v: &'a Hms6ColonStr) -> Self {
         v.as_str()
     }
 }
 
-impl<'a> TryFrom<&'a [u8]> for &'a HhmmssStr {
-    type Error = ValidationError;
+impl<'a> TryFrom<&'a [u8]> for &'a Hms6ColonStr {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
-            HhmmssStr::from_bytes_unchecked(v)
+            Hms6ColonStr::from_bytes_unchecked(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a mut [u8]> for &'a mut HhmmssStr {
-    type Error = ValidationError;
+impl<'a> TryFrom<&'a mut [u8]> for &'a mut Hms6ColonStr {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
-            HhmmssStr::from_bytes_unchecked_mut(v)
+            Hms6ColonStr::from_bytes_unchecked_mut(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a str> for &'a HhmmssStr {
-    type Error = ValidationError;
+impl<'a> TryFrom<&'a str> for &'a Hms6ColonStr {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
             // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
-            HhmmssStr::from_str_unchecked(v)
+            Hms6ColonStr::from_str_unchecked(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a mut str> for &'a mut HhmmssStr {
-    type Error = ValidationError;
+impl<'a> TryFrom<&'a mut str> for &'a mut Hms6ColonStr {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
             // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
-            HhmmssStr::from_str_unchecked_mut(v)
+            Hms6ColonStr::from_str_unchecked_mut(v)
         })
     }
 }
 
-impl fmt::Display for HhmmssStr {
+impl fmt::Display for Hms6ColonStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl ops::Deref for HhmmssStr {
+impl ops::Deref for Hms6ColonStr {
     type Target = str;
 
     #[inline]
@@ -824,36 +828,38 @@ impl ops::Deref for HhmmssStr {
     }
 }
 
-impl_cmp_symmetric!(str, HhmmssStr, &HhmmssStr);
-impl_cmp_symmetric!([u8], HhmmssStr, [u8]);
-impl_cmp_symmetric!([u8], HhmmssStr, &[u8]);
-impl_cmp_symmetric!([u8], &HhmmssStr, [u8]);
-impl_cmp_symmetric!(str, HhmmssStr, str);
-impl_cmp_symmetric!(str, HhmmssStr, &str);
-impl_cmp_symmetric!(str, &HhmmssStr, str);
+impl_cmp_symmetric!(str, Hms6ColonStr, &Hms6ColonStr);
+impl_cmp_symmetric!([u8], Hms6ColonStr, [u8]);
+impl_cmp_symmetric!([u8], Hms6ColonStr, &[u8]);
+impl_cmp_symmetric!([u8], &Hms6ColonStr, [u8]);
+impl_cmp_symmetric!(str, Hms6ColonStr, str);
+impl_cmp_symmetric!(str, Hms6ColonStr, &str);
+impl_cmp_symmetric!(str, &Hms6ColonStr, str);
 
-/// RFC 3339 [`partial-time`] string slice without secfrac part.
+/// Owned string in `%H:%M:%S` (`hh:mm:ss`) format.
+///
+/// This is also an RFC 3339 [`partial-time`] string without `secfrac` part.
 ///
 /// This is a fixed length string, and implements [`Copy`] trait.
 ///
 /// To create a value of this type, use [`<str>::parse()`] method or
-/// [`std::convert::TryFrom`] trait, or convert from `&HhmmssStr`.
+/// [`std::convert::TryFrom`] trait, or convert from `&Hms6ColonStr`.
 ///
 /// # Examples
 ///
 /// ```
-/// # use datetime_string::rfc3339::HhmmssString;
-/// use datetime_string::rfc3339::HhmmssStr;
+/// # use datetime_string::common::Hms6ColonString;
+/// use datetime_string::common::Hms6ColonStr;
 /// use std::convert::TryFrom;
 ///
-/// let try_from = HhmmssString::try_from("12:34:56")?;
+/// let try_from = Hms6ColonString::try_from("12:34:56")?;
 ///
-/// let parse = "12:34:56".parse::<HhmmssString>()?;
-/// let parse2: HhmmssString = "12:34:56".parse()?;
+/// let parse = "12:34:56".parse::<Hms6ColonString>()?;
+/// let parse2: Hms6ColonString = "12:34:56".parse()?;
 ///
-/// let to_owned = HhmmssStr::from_str("12:34:56")?.to_owned();
-/// let into: HhmmssString = HhmmssStr::from_str("12:34:56")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// let to_owned = Hms6ColonStr::from_str("12:34:56")?.to_owned();
+/// let into: Hms6ColonString = Hms6ColonStr::from_str("12:34:56")?.into();
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -866,10 +872,10 @@ impl_cmp_symmetric!(str, &HhmmssStr, str);
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct HhmmssString([u8; HMS_LEN]);
+pub struct Hms6ColonString([u8; HMS_LEN]);
 
-impl HhmmssString {
-    /// Creates a `HhmmssString` from the given bytes.
+impl Hms6ColonString {
+    /// Creates a `Hms6ColonString` from the given bytes.
     ///
     /// # Safety
     ///
@@ -880,100 +886,100 @@ impl HhmmssString {
         Self(s)
     }
 
-    /// Returns a `&HhmmssStr` for the string.
+    /// Returns a `&Hms6ColonStr` for the string.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssString;
-    /// use datetime_string::rfc3339::HhmmssStr;
-    /// let time = "12:34:56".parse::<HhmmssString>()?;
+    /// # use datetime_string::common::Hms6ColonString;
+    /// use datetime_string::common::Hms6ColonStr;
+    /// let time = "12:34:56".parse::<Hms6ColonString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
-    /// // `Deref<Target = HhmmssStr>` trait is implemented.
-    /// let _: &HhmmssStr = time.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// // `Deref<Target = Hms6ColonStr>` trait is implemented.
+    /// let _: &Hms6ColonStr = time.as_deref();
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_deref(&self) -> &HhmmssStr {
+    pub fn as_deref(&self) -> &Hms6ColonStr {
         unsafe {
             // This is safe because `self.0` is valid `hh:mm:ss` string.
-            HhmmssStr::from_bytes_unchecked(&self.0)
+            Hms6ColonStr::from_bytes_unchecked(&self.0)
         }
     }
 
-    /// Returns a `&mut HhmmssStr` for the string.
+    /// Returns a `&mut Hms6ColonStr` for the string.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::HhmmssString;
-    /// use datetime_string::rfc3339::HhmmssStr;
-    /// let mut time = "12:34:56".parse::<HhmmssString>()?;
+    /// # use datetime_string::common::Hms6ColonString;
+    /// use datetime_string::common::Hms6ColonStr;
+    /// let mut time = "12:34:56".parse::<Hms6ColonString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
-    /// let _: &mut HhmmssStr = time.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// let _: &mut Hms6ColonStr = time.as_deref_mut();
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_deref_mut(&mut self) -> &mut HhmmssStr {
+    pub fn as_deref_mut(&mut self) -> &mut Hms6ColonStr {
         unsafe {
             // This is safe because `self.0` is valid `hh:mm:ss` string.
-            HhmmssStr::from_bytes_unchecked_mut(&mut self.0)
+            Hms6ColonStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
 }
 
-impl core::borrow::Borrow<HhmmssStr> for HhmmssString {
+impl core::borrow::Borrow<Hms6ColonStr> for Hms6ColonString {
     #[inline]
-    fn borrow(&self) -> &HhmmssStr {
+    fn borrow(&self) -> &Hms6ColonStr {
         self.as_deref()
     }
 }
 
-impl core::borrow::BorrowMut<HhmmssStr> for HhmmssString {
+impl core::borrow::BorrowMut<Hms6ColonStr> for Hms6ColonString {
     #[inline]
-    fn borrow_mut(&mut self) -> &mut HhmmssStr {
+    fn borrow_mut(&mut self) -> &mut Hms6ColonStr {
         self.as_deref_mut()
     }
 }
 
-impl AsRef<[u8]> for HhmmssString {
+impl AsRef<[u8]> for Hms6ColonString {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-impl AsRef<str> for HhmmssString {
+impl AsRef<str> for Hms6ColonString {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl AsRef<HhmmssStr> for HhmmssString {
+impl AsRef<Hms6ColonStr> for Hms6ColonString {
     #[inline]
-    fn as_ref(&self) -> &HhmmssStr {
+    fn as_ref(&self) -> &Hms6ColonStr {
         self
     }
 }
 
 #[cfg(feature = "alloc")]
-impl From<HhmmssString> for Vec<u8> {
+impl From<Hms6ColonString> for Vec<u8> {
     #[inline]
-    fn from(v: HhmmssString) -> Vec<u8> {
+    fn from(v: Hms6ColonString) -> Vec<u8> {
         (*v.as_bytes_fixed_len()).into()
     }
 }
 
 #[cfg(feature = "alloc")]
-impl From<HhmmssString> for String {
+impl From<Hms6ColonString> for String {
     #[inline]
-    fn from(v: HhmmssString) -> String {
+    fn from(v: Hms6ColonString) -> String {
         let vec: Vec<u8> = (*v.as_bytes_fixed_len()).into();
         unsafe {
             // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
@@ -982,8 +988,8 @@ impl From<HhmmssString> for String {
     }
 }
 
-impl From<&HhmmssStr> for HhmmssString {
-    fn from(v: &HhmmssStr) -> Self {
+impl From<&Hms6ColonStr> for Hms6ColonString {
+    fn from(v: &Hms6ColonStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
             Self::new_unchecked(*v.as_bytes_fixed_len())
@@ -991,26 +997,26 @@ impl From<&HhmmssStr> for HhmmssString {
     }
 }
 
-impl TryFrom<&[u8]> for HhmmssString {
-    type Error = ValidationError;
+impl TryFrom<&[u8]> for Hms6ColonString {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
-        HhmmssStr::from_bytes(v).map(Into::into)
+        Hms6ColonStr::from_bytes(v).map(Into::into)
     }
 }
 
-impl TryFrom<&str> for HhmmssString {
-    type Error = ValidationError;
+impl TryFrom<&str> for Hms6ColonString {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
-        HhmmssStr::from_str(v).map(Into::into)
+        Hms6ColonStr::from_str(v).map(Into::into)
     }
 }
 
-impl TryFrom<[u8; 8]> for HhmmssString {
-    type Error = ValidationError;
+impl TryFrom<[u8; 8]> for Hms6ColonString {
+    type Error = Error;
 
     #[inline]
     fn try_from(v: [u8; 8]) -> Result<Self, Self::Error> {
@@ -1022,15 +1028,15 @@ impl TryFrom<[u8; 8]> for HhmmssString {
     }
 }
 
-impl fmt::Display for HhmmssString {
+impl fmt::Display for Hms6ColonString {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_deref().fmt(f)
     }
 }
 
-impl ops::Deref for HhmmssString {
-    type Target = HhmmssStr;
+impl ops::Deref for Hms6ColonString {
+    type Target = Hms6ColonStr;
 
     #[inline]
     fn deref(&self) -> &Self::Target {
@@ -1038,15 +1044,15 @@ impl ops::Deref for HhmmssString {
     }
 }
 
-impl ops::DerefMut for HhmmssString {
+impl ops::DerefMut for Hms6ColonString {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_deref_mut()
     }
 }
 
-impl str::FromStr for HhmmssString {
-    type Err = ValidationError;
+impl str::FromStr for Hms6ColonString {
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -1054,18 +1060,18 @@ impl str::FromStr for HhmmssString {
     }
 }
 
-impl_cmp_symmetric!(HhmmssStr, HhmmssString, &HhmmssString);
-impl_cmp_symmetric!(HhmmssStr, HhmmssString, HhmmssStr);
-impl_cmp_symmetric!(HhmmssStr, HhmmssString, &HhmmssStr);
-impl_cmp_symmetric!(str, HhmmssString, str);
-impl_cmp_symmetric!(str, HhmmssString, &str);
-impl_cmp_symmetric!(str, &HhmmssString, str);
-impl_cmp_symmetric!([u8], HhmmssString, [u8]);
-impl_cmp_symmetric!([u8], HhmmssString, &[u8]);
-impl_cmp_symmetric!([u8], &HhmmssString, [u8]);
+impl_cmp_symmetric!(Hms6ColonStr, Hms6ColonString, &Hms6ColonString);
+impl_cmp_symmetric!(Hms6ColonStr, Hms6ColonString, Hms6ColonStr);
+impl_cmp_symmetric!(Hms6ColonStr, Hms6ColonString, &Hms6ColonStr);
+impl_cmp_symmetric!(str, Hms6ColonString, str);
+impl_cmp_symmetric!(str, Hms6ColonString, &str);
+impl_cmp_symmetric!(str, &Hms6ColonString, str);
+impl_cmp_symmetric!([u8], Hms6ColonString, [u8]);
+impl_cmp_symmetric!([u8], Hms6ColonString, &[u8]);
+impl_cmp_symmetric!([u8], &Hms6ColonString, [u8]);
 
 #[cfg(feature = "serde")]
-impl Serialize for HhmmssString {
+impl Serialize for Hms6ColonString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -1081,11 +1087,11 @@ mod serde_ {
 
     use serde::de::{Deserialize, Deserializer, Visitor};
 
-    /// Visitor for `&HhmmssStr`.
+    /// Visitor for `&Hms6ColonStr`.
     struct StrVisitor;
 
     impl<'de> Visitor<'de> for StrVisitor {
-        type Value = &'de HhmmssStr;
+        type Value = &'de Hms6ColonStr;
 
         #[inline]
         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1109,7 +1115,7 @@ mod serde_ {
         }
     }
 
-    impl<'de> Deserialize<'de> for &'de HhmmssStr {
+    impl<'de> Deserialize<'de> for &'de Hms6ColonStr {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1118,11 +1124,11 @@ mod serde_ {
         }
     }
 
-    /// Visitor for `HhmmssString`.
+    /// Visitor for `Hms6ColonString`.
     struct StringVisitor;
 
     impl<'de> Visitor<'de> for StringVisitor {
-        type Value = HhmmssString;
+        type Value = Hms6ColonString;
 
         #[inline]
         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1146,7 +1152,7 @@ mod serde_ {
         }
     }
 
-    impl<'de> Deserialize<'de> for HhmmssString {
+    impl<'de> Deserialize<'de> for Hms6ColonString {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1197,7 +1203,7 @@ mod tests {
     fn ser_de_str() {
         let raw: &'static str = "12:34:56";
         assert_tokens(
-            &HhmmssStr::from_str(raw).unwrap(),
+            &Hms6ColonStr::from_str(raw).unwrap(),
             &[Token::BorrowedStr(raw)],
         );
     }
@@ -1206,7 +1212,7 @@ mod tests {
     #[test]
     fn ser_de_string() {
         let raw: &'static str = "12:34:56";
-        assert_tokens(&HhmmssString::try_from(raw).unwrap(), &[Token::Str(raw)]);
+        assert_tokens(&Hms6ColonString::try_from(raw).unwrap(), &[Token::Str(raw)]);
     }
 
     #[cfg(feature = "serde")]
@@ -1214,7 +1220,7 @@ mod tests {
     fn de_bytes_slice() {
         let raw: &'static [u8; 8] = b"12:34:56";
         assert_de_tokens(
-            &HhmmssStr::from_bytes(raw).unwrap(),
+            &Hms6ColonStr::from_bytes(raw).unwrap(),
             &[Token::BorrowedBytes(raw)],
         );
     }
@@ -1224,7 +1230,7 @@ mod tests {
     fn de_bytes() {
         let raw: &'static [u8; 8] = b"12:34:56";
         assert_de_tokens(
-            &HhmmssString::try_from(&raw[..]).unwrap(),
+            &Hms6ColonString::try_from(&raw[..]).unwrap(),
             &[Token::Bytes(raw)],
         );
     }
