@@ -4,7 +4,6 @@
 #![warn(clippy::missing_docs_in_private_items)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[allow(unused_extern_crates)] // Remove once `alloc` is used.
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
