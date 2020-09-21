@@ -3,8 +3,12 @@
 //! This module contains types which may be commonly used for multiple specifications.
 
 mod hms6_colon;
+mod ymd8_hyphen;
 
-pub use hms6_colon::{Hms6ColonStr, Hms6ColonString};
+pub use self::{
+    hms6_colon::{Hms6ColonStr, Hms6ColonString},
+    ymd8_hyphen::{Ymd8HyphenStr, Ymd8HyphenString},
+};
 
 /// Sign of a time offset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
