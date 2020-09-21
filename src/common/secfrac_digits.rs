@@ -4,6 +4,7 @@
 mod owned;
 
 use core::{
+    cmp,
     convert::TryFrom,
     fmt,
     ops::{self, RangeTo},
@@ -13,7 +14,10 @@ use core::{
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::error::{ComponentKind, Error, ErrorKind};
+use crate::{
+    error::{ComponentKind, Error, ErrorKind},
+    parse::parse_bcd8,
+};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::SecfracDigitsString;
@@ -221,6 +225,38 @@ impl SecfracDigitsStr {
         self.0.as_bytes()
     }
 
+    /// Retruns a milliseconds value in integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::SecfracDigitsStr;
+    /// let not_precise = SecfracDigitsStr::from_str("1")?;
+    /// assert_eq!(not_precise.milliseconds(), 100);
+    ///
+    /// let precise = SecfracDigitsStr::from_str("012")?;
+    /// assert_eq!(precise.milliseconds(), 12);
+    ///
+    /// let more_precise = SecfracDigitsStr::from_str("369999")?;
+    /// assert_eq!(more_precise.milliseconds(), 369);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn milliseconds(&self) -> u16 {
+        let bytes = self.0.as_bytes();
+        match self.len() {
+            1 => (bytes[0] - b'0') as u16 * 100,
+            2 => (bytes[0] - b'0') as u16 * 100 + (bytes[1] - b'0') as u16 * 10,
+            _ => {
+                debug_assert!(self.len() >= 3);
+                (bytes[0] - b'0') as u16 * 100
+                    + (bytes[1] - b'0') as u16 * 10
+                    + (bytes[2] - b'0') as u16
+            }
+        }
+    }
+
     /// Returns a milliseconds precision substring if there are enough digits.
     ///
     /// # Examples
@@ -305,6 +341,35 @@ impl SecfracDigitsStr {
         })
     }
 
+    /// Retruns a microseconds value in integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::SecfracDigitsStr;
+    /// let not_precise = SecfracDigitsStr::from_str("1")?;
+    /// assert_eq!(not_precise.microseconds(), 100_000);
+    ///
+    /// let precise = SecfracDigitsStr::from_str("012345")?;
+    /// assert_eq!(precise.microseconds(), 012_345);
+    ///
+    /// let more_precise = SecfracDigitsStr::from_str("123456999")?;
+    /// assert_eq!(more_precise.microseconds(), 123_456);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn microseconds(&self) -> u32 {
+        let bytes = self.0.as_bytes();
+        let len = bytes.len();
+        let len6 = cmp::min(6, len);
+
+        let mut buf: [u8; 8] = [b'0'; 8];
+        // Note that the first two digits should be `0`.
+        buf[2..(2 + len6)].copy_from_slice(&bytes[..len6]);
+        parse_bcd8(buf)
+    }
+
     /// Returns a microseconds precision substring if there are enough digits.
     ///
     /// # Examples
@@ -387,6 +452,39 @@ impl SecfracDigitsStr {
                 &*ptr
             }
         })
+    }
+
+    /// Retruns a nanoseconds value in integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::SecfracDigitsStr;
+    /// let not_precise = SecfracDigitsStr::from_str("1")?;
+    /// assert_eq!(not_precise.nanoseconds(), 100_000_000);
+    ///
+    /// let precise = SecfracDigitsStr::from_str("012345678")?;
+    /// assert_eq!(precise.nanoseconds(), 012_345_678);
+    ///
+    /// let more_precise = SecfracDigitsStr::from_str("876543210999")?;
+    /// assert_eq!(more_precise.nanoseconds(), 876_543_210);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn nanoseconds(&self) -> u32 {
+        let bytes = self.0.as_bytes();
+        let len = bytes.len();
+        let len8 = cmp::min(8, len);
+
+        let mut buf: [u8; 8] = [b'0'; 8];
+        buf[..len8].copy_from_slice(&bytes[..len8]);
+        let upper8 = parse_bcd8(buf) * 10;
+        if len > 8 {
+            upper8 + (bytes[8] - b'0') as u32
+        } else {
+            upper8
+        }
     }
 
     /// Returns a nanoseconds precision substring if there are enough digits.
