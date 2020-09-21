@@ -14,9 +14,11 @@ use crate::Error;
 
 use super::{validate_bytes, PartialTimeStr};
 
-/// RFC 3339 [`partial-time`] string slice.
+/// Owned string for a time in RFC 3339 [`partial-time`] format, such as `12:34:56.7890`.
 ///
-/// To create a value of this type, use [`<str>::parse()`] method or
+/// This is "partial", because it is not associated to a time offset.
+///
+/// To create a value of this type, use [`str::parse`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&PartialTimeStr`.
 ///
 /// # Examples
@@ -78,6 +80,7 @@ impl PartialTimeString {
     /// ```
     /// # use datetime_string::rfc3339::PartialTimeString;
     /// use datetime_string::rfc3339::PartialTimeStr;
+    ///
     /// let time = "12:34:56.7890".parse::<PartialTimeString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -101,6 +104,7 @@ impl PartialTimeString {
     /// ```
     /// # use datetime_string::rfc3339::PartialTimeString;
     /// use datetime_string::rfc3339::PartialTimeStr;
+    ///
     /// let mut time = "12:34:56.7890".parse::<PartialTimeString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

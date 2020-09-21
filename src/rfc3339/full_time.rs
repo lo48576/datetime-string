@@ -37,7 +37,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// RFC 3339 [`full-time`] string slice.
+/// String slice for a time in RFC 3339 [`full-time`] format, such as `12:34:56.7890-23:12`.
 ///
 /// [`full-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -268,6 +268,7 @@ impl FullTimeStr {
     /// ```
     /// # use datetime_string::rfc3339::FullTimeStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "12:34:56.7890-23:12".to_owned();
     /// let time = FullTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
@@ -335,6 +336,7 @@ impl FullTimeStr {
     /// ```
     /// # use datetime_string::rfc3339::FullTimeStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "12:34:56.7890-23:12".to_owned();
     /// let time = FullTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
@@ -394,6 +396,7 @@ impl FullTimeStr {
     /// ```
     /// # use datetime_string::rfc3339::FullTimeStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "12:34:56.7890-23:12".to_owned();
     /// let time = FullTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");

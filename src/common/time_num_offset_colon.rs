@@ -1,4 +1,4 @@
-//! Time offset in `+hh:mm` or `-hh:mm` format.
+//! Time offset string in `+hh:mm` or `-hh:mm` format.
 //!
 //! This is also an RFC 3339 [`time-numoffset`].
 //!
@@ -75,7 +75,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// String slice in `+hh:mm` or `-hh:mm` format.
+/// String slice for a time offset in `+hh:mm` or `-hh:mm` format, such as `+09:00` and `-00:00`.
 ///
 /// This is also an RFC 3339 [`time-numoffset`] string.
 ///
@@ -357,6 +357,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "-12:34".to_owned();
     /// let offset = TimeNumOffsetColonStr::from_mut_str(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
@@ -565,6 +566,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -601,6 +603,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -741,6 +744,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -779,6 +783,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -931,13 +936,13 @@ impl_cmp_symmetric!(str, TimeNumOffsetColonStr, str);
 impl_cmp_symmetric!(str, TimeNumOffsetColonStr, &str);
 impl_cmp_symmetric!(str, &TimeNumOffsetColonStr, str);
 
-/// Owned string in `+hh:mm` or `-hh:mm` format.
+/// Owned string for a time offset in `+hh:mm` or `-hh:mm` format, such as `+09:00` and `-00:00`.
 ///
 /// This is also an RFC 3339 [`time-numoffset`] string.
 ///
 /// This is a fixed length string, and implements [`Copy`] trait.
 ///
-/// To create a value of this type, use [`<str>::parse()`] method or
+/// To create a value of this type, use [`str::parse`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&TimeNumOffsetColonStr`.
 ///
 /// # Examples
@@ -988,6 +993,7 @@ impl TimeNumOffsetColonString {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonString;
     /// use datetime_string::common::TimeNumOffsetColonStr;
+    ///
     /// let offset = "-12:34".parse::<TimeNumOffsetColonString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -1011,6 +1017,7 @@ impl TimeNumOffsetColonString {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonString;
     /// use datetime_string::common::TimeNumOffsetColonStr;
+    ///
     /// let mut offset = "-12:34".parse::<TimeNumOffsetColonString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

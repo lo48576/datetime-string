@@ -14,11 +14,9 @@ use crate::Error;
 
 use super::{validate_bytes, SecfracStr};
 
-/// RFC 3339 [`time-secfrac`] string slice without secfrac part.
+/// Owned string for a time in RFC 3339 [`time-secfrac`] format, such as `.7890`.
 ///
-/// This is a fixed length string, and implements [`Copy`] trait.
-///
-/// To create a value of this type, use [`<str>::parse()`] method or
+/// To create a value of this type, use [`str::parse`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&SecfracStr`.
 ///
 /// # Examples
@@ -80,6 +78,7 @@ impl SecfracString {
     /// ```
     /// # use datetime_string::rfc3339::SecfracString;
     /// use datetime_string::rfc3339::SecfracStr;
+    ///
     /// let secfrac = ".1234".parse::<SecfracString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -103,6 +102,7 @@ impl SecfracString {
     /// ```
     /// # use datetime_string::rfc3339::SecfracString;
     /// use datetime_string::rfc3339::SecfracStr;
+    ///
     /// let mut secfrac = ".1234".parse::<SecfracString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

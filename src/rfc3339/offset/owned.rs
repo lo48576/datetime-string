@@ -14,7 +14,7 @@ use crate::Error;
 
 use super::{validate_bytes, TimeOffsetStr};
 
-/// RFC 3339 [`time-offset`] string slice without secfrac part.
+/// Owned string for a time in RFC 3339 [`time-offset`] format, such as `+09:00`, `-00:00`, and `Z`.
 ///
 /// # Examples
 ///
@@ -75,6 +75,7 @@ impl TimeOffsetString {
     /// ```
     /// # use datetime_string::rfc3339::TimeOffsetString;
     /// use datetime_string::rfc3339::TimeOffsetStr;
+    ///
     /// let secfrac = "-12:34".parse::<TimeOffsetString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -98,6 +99,7 @@ impl TimeOffsetString {
     /// ```
     /// # use datetime_string::rfc3339::TimeOffsetString;
     /// use datetime_string::rfc3339::TimeOffsetStr;
+    ///
     /// let mut secfrac = "-12:34".parse::<TimeOffsetString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

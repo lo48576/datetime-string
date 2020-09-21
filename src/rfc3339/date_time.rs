@@ -55,7 +55,8 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// RFC 3339 [`date-time`] string slice.
+/// String slice for a datetime in RFC 3339 [`date-time`] format, such as
+/// `2001-06-17T12:34:56.7890-23:12`.
 ///
 /// [`date-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -270,6 +271,7 @@ impl DateTimeStr {
     /// ```
     /// # use datetime_string::rfc3339::DateTimeStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "2001-06-17T12:34:56.7890-23:12".to_owned();
     /// let datetime = DateTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(datetime.as_str(), "2001-06-17T12:34:56.7890-23:12");
@@ -387,6 +389,7 @@ impl DateTimeStr {
     /// ```
     /// # use datetime_string::rfc3339::DateTimeStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "2001-06-17T12:34:56.7890-23:12".to_owned();
     /// let datetime = DateTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(datetime.as_str(), "2001-06-17T12:34:56.7890-23:12");
