@@ -53,9 +53,9 @@ fn parse_bcd4_be(bcd: [u8; 4]) -> u16 {
     // Sample: chunk1 == 0x31_32_33_34.
     let chunk1 = u32::from_be_bytes(bcd);
 
-    // Mask for 2nd and 4th significant digits.
+    /// Mask for 2nd and 4th significant digits.
     const LOWER_MASK_1: u32 = 0x00_0f_00_0f;
-    // Mask for 1st and 3rd significant digits.
+    /// Mask for 1st and 3rd significant digits.
     const UPPER_MASK_1: u32 = 0x0f_00_0f_00;
 
     // Sample: (chunk1 & LOWER_MASK_1) == 0x00_02_00_04 (i.e. u32::from_be([0, 2, 0, 4]).

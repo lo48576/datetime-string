@@ -277,7 +277,7 @@ impl FullTimeStr {
     /// assert_eq!(partial_time.as_str(), "12:34:56.7890");
     /// assert_eq!(offset.as_str(), "-23:12");
     ///
-    /// partial_time.secfrac_mut().unwrap().fill_with_zero();
+    /// partial_time.secfrac_mut().unwrap().digits_mut().fill_with_zero();
     /// offset.to_numoffset_mut().unwrap().set_sign(TimeOffsetSign::Positive);
     /// assert_eq!(time.as_str(), "12:34:56.0000+23:12");
     /// # Ok::<_, datetime_string::Error>(())
@@ -344,7 +344,7 @@ impl FullTimeStr {
     /// let partial_time = time.partial_time_mut();
     /// assert_eq!(partial_time.as_str(), "12:34:56.7890");
     ///
-    /// partial_time.secfrac_mut().unwrap().fill_with_zero();
+    /// partial_time.secfrac_mut().unwrap().digits_mut().fill_with_zero();
     /// assert_eq!(time.as_str(), "12:34:56.0000-23:12");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```

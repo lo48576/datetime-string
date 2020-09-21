@@ -5,15 +5,26 @@
 #[cfg(feature = "alloc")]
 mod owned;
 
-use core::{convert::TryFrom, fmt, ops, str};
+use core::{
+    convert::TryFrom,
+    fmt,
+    ops::{self, RangeFrom},
+    str,
+};
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::error::{ComponentKind, Error, ErrorKind};
+use crate::{
+    common::SecfracDigitsStr,
+    error::{ComponentKind, Error, ErrorKind},
+};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::SecfracString;
+
+/// Range of digits.
+const DIGITS_RANGE: RangeFrom<usize> = 1..;
 
 /// Validates the given string as an RFC 3339 [`time-secfrac`] string.
 ///
@@ -27,7 +38,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
         return Err(ErrorKind::InvalidSeparator.into());
     }
 
-    let secfrac_s = &s[1..];
+    let secfrac_s = &s[DIGITS_RANGE];
     if !secfrac_s.iter().all(u8::is_ascii_digit) {
         return Err(ErrorKind::InvalidComponentType(ComponentKind::Secfrac).into());
     }
@@ -128,7 +139,7 @@ impl SecfracStr {
     /// let secfrac = SecfracStr::from_mut_str(&mut buf)?;
     /// assert_eq!(secfrac.as_str(), ".1234");
     ///
-    /// secfrac.fill_with_zero();
+    /// secfrac.digits_mut().fill_with_zero();
     /// assert_eq!(secfrac.as_str(), ".0000");
     ///
     /// assert_eq!(buf, ".0000");
@@ -171,7 +182,7 @@ impl SecfracStr {
     /// let secfrac = SecfracStr::from_bytes_mut(&mut buf)?;
     /// assert_eq!(secfrac.as_str(), ".1234");
     ///
-    /// secfrac.fill_with_zero();
+    /// secfrac.digits_mut().fill_with_zero();
     /// assert_eq!(secfrac.as_str(), ".0000");
     ///
     /// assert_eq!(&buf[..], b".0000");
@@ -222,17 +233,53 @@ impl SecfracStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::SecfracStr;
+    /// use datetime_string::common::SecfracDigitsStr;
+    ///
     /// let secfrac = SecfracStr::from_str(".1234")?;
-    /// assert_eq!(secfrac.digits(), "1234");
+    /// assert_eq!(secfrac.digits().as_str(), "1234");
     ///
     /// let secfrac2 = SecfracStr::from_str(".012340")?;
-    /// assert_eq!(secfrac2.digits(), "012340");
+    /// assert_eq!(secfrac2.digits().as_str(), "012340");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn digits(&self) -> &str {
-        &self.0[1..]
+    pub fn digits(&self) -> &SecfracDigitsStr {
+        unsafe {
+            // This is safe because the digits part contains only ASCII digits.
+            SecfracDigitsStr::from_bytes_unchecked(self.0.as_bytes().get_unchecked(DIGITS_RANGE))
+        }
+    }
+
+    /// Returns the digits as a mutable reference.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::SecfracStr;
+    /// use datetime_string::common::SecfracDigitsStr;
+    ///
+    /// let mut buf = ".1234".to_owned();
+    /// let secfrac = SecfracStr::from_mut_str(&mut buf)?;
+    /// let digits = secfrac.digits_mut();
+    /// assert_eq!(digits.as_str(), "1234");
+    ///
+    /// digits.fill_with_zero();
+    /// assert_eq!(digits.as_str(), "0000");
+    /// assert_eq!(secfrac.as_str(), ".0000");
+    /// assert_eq!(buf, ".0000");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn digits_mut(&mut self) -> &mut SecfracDigitsStr {
+        unsafe {
+            // This is safe because `SecfracDigitsStr` can contain only ASCII digits.
+            // This means the underlying bytes of `self.0` is always an ASCII string.
+            let bytes = self.0.as_bytes_mut();
+            // This is safe because the digits part contains only ASCII digits.
+            SecfracDigitsStr::from_bytes_unchecked_mut(bytes.get_unchecked_mut(DIGITS_RANGE))
+        }
     }
 
     /// Returns a milliseconds precision secfrac if there are enough digits.
@@ -259,33 +306,6 @@ impl SecfracStr {
             // This is safe because ".NNN" value (where Ns are digits) is a
             // valid time-secfrac string.
             SecfracStr::from_bytes_unchecked(s)
-        })
-    }
-
-    /// Returns a milliseconds digits as a fixed bytes slice, if there are enough digits.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use datetime_string::rfc3339::SecfracStr;
-    /// let not_precise = SecfracStr::from_str(".1")?;
-    /// assert_eq!(not_precise.milliseconds_bytes_fixed_len(), None);
-    ///
-    /// let expected = SecfracStr::from_str(".012")?;
-    /// assert_eq!(expected.milliseconds_bytes_fixed_len(), Some(b"012"));
-    ///
-    /// let more_precise = SecfracStr::from_str(".012345678901")?;
-    /// assert_eq!(more_precise.milliseconds_bytes_fixed_len(), Some(b"012"));
-    /// # Ok::<_, datetime_string::Error>(())
-    /// ```
-    pub fn milliseconds_bytes_fixed_len(&self) -> Option<&[u8; 3]> {
-        self.as_bytes().get(1..4).map(|s| {
-            debug_assert_eq!(s.len(), 3);
-            let ptr = s.as_ptr() as *const [u8; 3];
-            unsafe {
-                // This is always safe because the string is valid `time-secfrac` string.
-                &*ptr
-            }
         })
     }
 
@@ -316,33 +336,6 @@ impl SecfracStr {
         })
     }
 
-    /// Returns a microseconds digits as a fixed bytes slice, if there are enough digits.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use datetime_string::rfc3339::SecfracStr;
-    /// let not_precise = SecfracStr::from_str(".1234")?;
-    /// assert_eq!(not_precise.microseconds_bytes_fixed_len(), None);
-    ///
-    /// let expected = SecfracStr::from_str(".012345")?;
-    /// assert_eq!(expected.microseconds_bytes_fixed_len(), Some(b"012345"));
-    ///
-    /// let more_precise = SecfracStr::from_str(".012345678901")?;
-    /// assert_eq!(more_precise.microseconds_bytes_fixed_len(), Some(b"012345"));
-    /// # Ok::<_, datetime_string::Error>(())
-    /// ```
-    pub fn microseconds_bytes_fixed_len(&self) -> Option<&[u8; 6]> {
-        self.as_bytes().get(1..7).map(|s| {
-            debug_assert_eq!(s.len(), 6);
-            let ptr = s.as_ptr() as *const [u8; 6];
-            unsafe {
-                // This is always safe because the string is valid `time-secfrac` string.
-                &*ptr
-            }
-        })
-    }
-
     /// Returns a nanoseconds precision secfrac if there are enough digits.
     ///
     /// # Examples
@@ -368,101 +361,6 @@ impl SecfracStr {
             // a valid time-secfrac string.
             SecfracStr::from_bytes_unchecked(s)
         })
-    }
-
-    /// Returns a nanoseconds digits as a fixed bytes slice, if there are enough digits.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use datetime_string::rfc3339::SecfracStr;
-    /// let not_precise = SecfracStr::from_str(".1234")?;
-    /// assert_eq!(not_precise.nanoseconds_bytes_fixed_len(), None);
-    ///
-    /// let expected = SecfracStr::from_str(".012345678")?;
-    /// assert_eq!(expected.nanoseconds_bytes_fixed_len(), Some(b"012345678"));
-    ///
-    /// let more_precise = SecfracStr::from_str(".012345678901")?;
-    /// assert_eq!(more_precise.nanoseconds_bytes_fixed_len(), Some(b"012345678"));
-    /// # Ok::<_, datetime_string::Error>(())
-    /// ```
-    pub fn nanoseconds_bytes_fixed_len(&self) -> Option<&[u8; 9]> {
-        self.as_bytes().get(1..10).map(|s| {
-            debug_assert_eq!(s.len(), 9);
-            let ptr = s.as_ptr() as *const [u8; 9];
-            unsafe {
-                // This is always safe because the string is valid `time-secfrac` string.
-                &*ptr
-            }
-        })
-    }
-
-    /// Fills the secfrac part with zero.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use datetime_string::rfc3339::SecfracStr;
-    /// let mut buf = ".1234".to_owned();
-    /// let secfrac = SecfracStr::from_mut_str(&mut buf)?;
-    /// assert_eq!(secfrac.as_str(), ".1234");
-    ///
-    /// secfrac.fill_with_zero();
-    /// assert_eq!(secfrac.as_str(), ".0000");
-    ///
-    /// assert_eq!(buf, ".0000");
-    /// # Ok::<_, datetime_string::Error>(())
-    /// ```
-    #[inline]
-    pub fn fill_with_zero(&mut self) {
-        // Use `slice::fill()` once rust-lang/rust#70758 is stabilized.
-        // See <https://github.com/rust-lang/rust/issues/70758>.
-        unsafe {
-            // This is safe because the value after the modification is
-            // ".000...00", and it is of course a valid string.
-            self.0[1..]
-                .as_bytes_mut()
-                .iter_mut()
-                .for_each(|digit| *digit = b'0');
-        }
-        debug_assert!(
-            validate_bytes(self.as_bytes()).is_ok(),
-            "The secfrac string must be valid after the modification"
-        );
-    }
-
-    /// Fills the secfrac part with zero.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use datetime_string::rfc3339::SecfracStr;
-    /// let mut buf = ".1234".to_owned();
-    /// let secfrac = SecfracStr::from_mut_str(&mut buf)?;
-    /// assert_eq!(secfrac.as_str(), ".1234");
-    ///
-    /// secfrac.fill_with_nine();
-    /// assert_eq!(secfrac.as_str(), ".9999");
-    ///
-    /// assert_eq!(buf, ".9999");
-    /// # Ok::<_, datetime_string::Error>(())
-    /// ```
-    #[inline]
-    pub fn fill_with_nine(&mut self) {
-        // Use `slice::fill()` once rust-lang/rust#70758 is stabilized.
-        // See <https://github.com/rust-lang/rust/issues/70758>.
-        unsafe {
-            // This is safe because the value after the modification is
-            // ".999...99", and it is of course a valid string.
-            self.0[1..]
-                .as_bytes_mut()
-                .iter_mut()
-                .for_each(|digit| *digit = b'9');
-        }
-        debug_assert!(
-            validate_bytes(self.as_bytes()).is_ok(),
-            "The secfrac string must be valid after the modification"
-        );
     }
 }
 
