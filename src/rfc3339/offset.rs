@@ -269,6 +269,18 @@ impl TimeOffsetStr {
     }
 
     /// Returns a `&TimeNumOffsetStr` if the time offset is not `Z`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let numoffset = TimeOffsetStr::from_str("+12:34")?;
+    /// assert_eq!(numoffset.to_numoffset().unwrap().hour_abs(), 12);
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert_eq!(zulu.to_numoffset(), None);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
     #[inline]
     pub fn to_numoffset(&self) -> Option<&TimeNumOffsetStr> {
         if self.len() == 1 {
@@ -281,6 +293,22 @@ impl TimeOffsetStr {
     }
 
     /// Returns a `&mut TimeNumOffsetStr` if the time offset is not `Z`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let mut buf_num = "+12:34".to_owned();
+    /// let numoffset = TimeOffsetStr::from_mut_str(&mut buf_num)?;
+    /// numoffset.to_numoffset_mut().unwrap().set_hour_abs(23);
+    /// assert_eq!(numoffset.as_str(), "+23:34");
+    /// assert_eq!(buf_num, "+23:34");
+    ///
+    /// let mut buf_zulu = "Z".to_owned();
+    /// let zulu = TimeOffsetStr::from_mut_str(&mut buf_zulu)?;
+    /// assert_eq!(zulu.to_numoffset_mut(), None);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
     #[inline]
     // This mimics API of `std::path::Path::to_str(&self) -> Option<&str>`, and
     // `to_*` seems more appropriate than `as_*` (because this method does not
