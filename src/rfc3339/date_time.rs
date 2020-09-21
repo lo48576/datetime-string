@@ -281,7 +281,7 @@ impl DateTimeStr {
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
     ///
     /// date.set_year(1999)?;
-    /// time.partial_time_mut().secfrac_mut().unwrap().fill_with_zero();
+    /// time.partial_time_mut().secfrac_mut().unwrap().digits_mut().fill_with_zero();
     /// assert_eq!(datetime.as_str(), "1999-06-17T12:34:56.0000-23:12");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
@@ -397,7 +397,7 @@ impl DateTimeStr {
     /// let time = datetime.time_mut();
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
     ///
-    /// time.partial_time_mut().secfrac_mut().unwrap().fill_with_zero();
+    /// time.partial_time_mut().secfrac_mut().unwrap().digits_mut().fill_with_zero();
     /// assert_eq!(datetime.as_str(), "2001-06-17T12:34:56.0000-23:12");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```

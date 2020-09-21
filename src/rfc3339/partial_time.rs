@@ -139,7 +139,7 @@ impl PartialTimeStr {
     /// assert_eq!(time.as_str(), "12:34:56.7890");
     ///
     /// time.hms_mut().set_time(23, 12, 01);
-    /// time.secfrac_mut().unwrap().fill_with_zero();
+    /// time.secfrac_mut().unwrap().digits_mut().fill_with_zero();
     /// assert_eq!(time.as_str(), "23:12:01.0000");
     ///
     /// assert_eq!(buf, "23:12:01.0000");
@@ -184,7 +184,7 @@ impl PartialTimeStr {
     /// assert_eq!(time.as_str(), "12:34:56.7890");
     ///
     /// time.hms_mut().set_time(23, 12, 01);
-    /// time.secfrac_mut().unwrap().fill_with_zero();
+    /// time.secfrac_mut().unwrap().digits_mut().fill_with_zero();
     /// assert_eq!(time.as_str(), "23:12:01.0000");
     ///
     /// assert_eq!(&buf[..], b"23:12:01.0000");
