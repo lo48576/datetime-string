@@ -10,7 +10,9 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{validate_bytes, DateTimeStr, ValidationError};
+use crate::Error;
+
+use super::{validate_bytes, DateTimeStr};
 
 /// RFC 3339 [`date-time`] string slice.
 ///
@@ -28,7 +30,7 @@ use super::{validate_bytes, DateTimeStr, ValidationError};
 ///
 /// let to_owned = DateTimeStr::from_str("2001-06-17T12:34:56.7890-23:12")?.to_owned();
 /// let into: DateTimeString = DateTimeStr::from_str("2001-06-17T12:34:56.7890-23:12")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`date-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -78,7 +80,7 @@ impl DateTimeString {
     /// // Usually you don't need to call `as_deref()` explicitly, because
     /// // `Deref<Target = DateTimeStr>` trait is implemented.
     /// let _: &DateTimeStr = datetime.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -101,7 +103,7 @@ impl DateTimeString {
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
     /// let _: &mut DateTimeStr = datetime.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -172,7 +174,7 @@ impl From<&DateTimeStr> for DateTimeString {
 }
 
 impl TryFrom<&[u8]> for DateTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
@@ -181,7 +183,7 @@ impl TryFrom<&[u8]> for DateTimeString {
 }
 
 impl TryFrom<&str> for DateTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
@@ -190,7 +192,7 @@ impl TryFrom<&str> for DateTimeString {
 }
 
 impl TryFrom<Vec<u8>> for DateTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
@@ -226,7 +228,7 @@ impl ops::DerefMut for DateTimeString {
 }
 
 impl str::FromStr for DateTimeString {
-    type Err = ValidationError;
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {

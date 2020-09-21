@@ -7,7 +7,9 @@ use core::{convert::TryFrom, fmt, ops, str};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{PartialTimeStr, TimeNumOffsetStr, TimeOffsetStr, ValidationError};
+use crate::Error;
+
+use super::{PartialTimeStr, TimeNumOffsetStr, TimeOffsetStr};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::FullTimeString;
@@ -18,7 +20,7 @@ mod owned;
 /// Validates the given string as an RFC 3339 [`full-time`].
 ///
 /// [`full-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
-fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
+fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     let len = s.len();
     let len_1 = len - 1;
     if s[len_1] == b'Z' {
@@ -106,12 +108,12 @@ impl FullTimeStr {
     /// assert!(FullTimeStr::from_str("12:34:56Z").is_ok());
     /// assert!(FullTimeStr::from_str("23:59:59+23:59").is_ok());
     /// assert!(FullTimeStr::from_str("00:00:00.0-00:00").is_ok());
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     // `FromStr` trait cannot be implemented for a slice.
     #[allow(clippy::should_implement_trait)]
-    pub fn from_str(s: &str) -> Result<&Self, ValidationError> {
+    pub fn from_str(s: &str) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -127,10 +129,10 @@ impl FullTimeStr {
     ///
     /// time.partial_time_mut().hms_mut().set_time(0, 22, 44)?;
     /// assert_eq!(time.as_str(), "00:22:44.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, ValidationError> {
+    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -146,10 +148,10 @@ impl FullTimeStr {
     /// assert!(FullTimeStr::from_bytes(b"12:34:56Z").is_ok());
     /// assert!(FullTimeStr::from_bytes(b"23:59:59+23:59").is_ok());
     /// assert!(FullTimeStr::from_bytes(b"00:00:00.0-00:00").is_ok());
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes(s: &[u8]) -> Result<&Self, ValidationError> {
+    pub fn from_bytes(s: &[u8]) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -165,10 +167,10 @@ impl FullTimeStr {
     ///
     /// time.partial_time_mut().hms_mut().set_time(0, 22, 44)?;
     /// assert_eq!(time.as_str(), "00:22:44.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, ValidationError> {
+    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -181,7 +183,7 @@ impl FullTimeStr {
     /// let time = FullTimeStr::from_str("12:34:56.7890-23:12")?;
     ///
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -200,7 +202,7 @@ impl FullTimeStr {
     /// let time = FullTimeStr::from_str("12:34:56.7890-23:12")?;
     ///
     /// assert_eq!(time.as_bytes(), b"12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`as_bytes_fixed_len`]: #method.as_bytes_fixed_len
@@ -237,7 +239,7 @@ impl FullTimeStr {
     /// let (partial_time, offset) = time.decompose();
     /// assert_eq!(partial_time.as_str(), "12:34:56.7890");
     /// assert_eq!(offset.as_str(), "-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -277,7 +279,7 @@ impl FullTimeStr {
     /// partial_time.secfrac_mut().unwrap().fill_with_zero();
     /// offset.to_numoffset_mut().unwrap().set_sign(TimeOffsetSign::Positive);
     /// assert_eq!(time.as_str(), "12:34:56.0000+23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -310,7 +312,7 @@ impl FullTimeStr {
     ///
     /// let partial_time = time.partial_time();
     /// assert_eq!(partial_time.as_str(), "12:34:56.7890");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -342,7 +344,7 @@ impl FullTimeStr {
     ///
     /// partial_time.secfrac_mut().unwrap().fill_with_zero();
     /// assert_eq!(time.as_str(), "12:34:56.0000-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -369,7 +371,7 @@ impl FullTimeStr {
     ///
     /// let offset = time.offset();
     /// assert_eq!(offset.as_str(), "-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -401,7 +403,7 @@ impl FullTimeStr {
     ///
     /// offset.to_numoffset_mut().unwrap().set_sign(TimeOffsetSign::Positive);
     /// assert_eq!(time.as_str(), "12:34:56.7890+23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -457,7 +459,7 @@ impl<'a> From<&'a FullTimeStr> for &'a str {
 }
 
 impl<'a> TryFrom<&'a [u8]> for &'a FullTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
@@ -470,7 +472,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a FullTimeStr {
 }
 
 impl<'a> TryFrom<&'a mut [u8]> for &'a mut FullTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
@@ -483,7 +485,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut FullTimeStr {
 }
 
 impl<'a> TryFrom<&'a str> for &'a FullTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
@@ -496,7 +498,7 @@ impl<'a> TryFrom<&'a str> for &'a FullTimeStr {
 }
 
 impl<'a> TryFrom<&'a mut str> for &'a mut FullTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {

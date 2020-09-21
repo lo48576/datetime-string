@@ -22,7 +22,7 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{ComponentKind, ErrorKind, ValidationError};
+use crate::error::{ComponentKind, Error, ErrorKind};
 
 /// Length of `full-date` string (i.e. length of `YYYY-MM-DD`).
 const FULL_DATE_LEN: usize = 10;
@@ -36,7 +36,7 @@ const MDAY_RANGE: Range<usize> = 8..10;
 /// Validates the given string as an RFC 3339 [`full-date`] string.
 ///
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
-fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
+fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     let s: &[u8; FULL_DATE_LEN] = match s.len().cmp(&FULL_DATE_LEN) {
         Ordering::Greater => return Err(ErrorKind::TooLong.into()),
         Ordering::Less => return Err(ErrorKind::TooShort.into()),
@@ -150,12 +150,12 @@ impl FullDateStr {
     /// assert!(FullDateStr::from_str("2004-02-29").is_ok(), "2004 is a leap year");
     /// assert!(FullDateStr::from_str("2100-02-29").is_err(), "2100 is NOT a leap year");
     /// assert!(FullDateStr::from_str("2000-02-29").is_ok(), "2000 is a leap year");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     // `FromStr` trait cannot be implemented for a slice.
     #[allow(clippy::should_implement_trait)]
-    pub fn from_str(s: &str) -> Result<&Self, ValidationError> {
+    pub fn from_str(s: &str) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -173,10 +173,10 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "1999-12-31");
     ///
     /// assert_eq!(buf, "1999-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, ValidationError> {
+    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -195,10 +195,10 @@ impl FullDateStr {
     /// assert!(FullDateStr::from_bytes(b"2004-02-29").is_ok(), "2004 is a leap year");
     /// assert!(FullDateStr::from_bytes(b"2100-02-29").is_err(), "2100 is NOT a leap year");
     /// assert!(FullDateStr::from_bytes(b"2000-02-29").is_ok(), "2000 is a leap year");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes(s: &[u8]) -> Result<&Self, ValidationError> {
+    pub fn from_bytes(s: &[u8]) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -216,10 +216,10 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "1999-12-31");
     ///
     /// assert_eq!(&buf[..], b"1999-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, ValidationError> {
+    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -232,7 +232,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.as_str(), "2001-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -251,7 +251,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.as_bytes(), b"2001-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`as_bytes_fixed_len`]: #method.as_bytes_fixed_len
@@ -271,7 +271,7 @@ impl FullDateStr {
     ///
     /// let fixed_len: &[u8; 10] = date.as_bytes_fixed_len();
     /// assert_eq!(fixed_len, b"2001-12-31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -296,7 +296,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.year_str(), "2001");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -314,7 +314,7 @@ impl FullDateStr {
     ///
     /// let year_fixed_len: &[u8; 4] = date.year_bytes_fixed_len();
     /// assert_eq!(year_fixed_len, b"2001");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -351,7 +351,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.year(), 2001);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -368,7 +368,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.month_str(), "12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -386,7 +386,7 @@ impl FullDateStr {
     ///
     /// let month_fixed_len: &[u8; 2] = date.month_bytes_fixed_len();
     /// assert_eq!(month_fixed_len, b"12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -419,7 +419,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.month1(), 12);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -436,7 +436,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.month0(), 11);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -453,7 +453,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.mday_str(), "31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -471,7 +471,7 @@ impl FullDateStr {
     ///
     /// let mday_fixed_len: &[u8; 2] = date.mday_bytes_fixed_len();
     /// assert_eq!(mday_fixed_len, b"31");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -504,7 +504,7 @@ impl FullDateStr {
     /// let date = FullDateStr::from_str("2001-12-31")?;
     ///
     /// assert_eq!(date.mday(), 31);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -531,9 +531,9 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "2004-02-29");
     ///
     /// assert!(date.set_year(2001).is_err(), "2001-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_year(&mut self, year: u16) -> Result<(), ValidationError> {
+    pub fn set_year(&mut self, year: u16) -> Result<(), Error> {
         if year > 9999 {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Year).into());
         }
@@ -568,9 +568,9 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "2001-08-31");
     ///
     /// assert!(date.set_month0(8).is_err(), "2001-09-31 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_month0(&mut self, month0: u8) -> Result<(), ValidationError> {
+    pub fn set_month0(&mut self, month0: u8) -> Result<(), Error> {
         if month0 >= 12 {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Month).into());
         }
@@ -605,10 +605,10 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "2001-08-31");
     ///
     /// assert!(date.set_month1(9).is_err(), "2001-09-31 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn set_month1(&mut self, month1: u8) -> Result<(), ValidationError> {
+    pub fn set_month1(&mut self, month1: u8) -> Result<(), Error> {
         self.set_month0(month1.wrapping_sub(1))
     }
 
@@ -630,9 +630,9 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "2001-02-03");
     ///
     /// assert!(date.set_mday(29).is_err(), "2001-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_mday(&mut self, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_mday(&mut self, mday: u8) -> Result<(), Error> {
         validate_ym1d(self.year(), self.month1(), mday)?;
         unsafe {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
@@ -664,9 +664,9 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "2001-04-23");
     ///
     /// assert!(date.set_month0_mday(1, 29).is_err(), "2001-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_month0_mday(&mut self, month0: u8, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_month0_mday(&mut self, month0: u8, mday: u8) -> Result<(), Error> {
         validate_ym0d(self.year(), month0, mday)?;
         unsafe {
             // This is safe because `write_digit2()` fills the slices with ASCII digits.
@@ -699,9 +699,9 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "2001-04-23");
     ///
     /// assert!(date.set_month1_mday(2, 29).is_err(), "2001-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_month1_mday(&mut self, month1: u8, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_month1_mday(&mut self, month1: u8, mday: u8) -> Result<(), Error> {
         validate_ym1d(self.year(), month1, mday)?;
         unsafe {
             // This is safe because `write_digit2()` fills the slices with ASCII digits.
@@ -735,9 +735,9 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "1999-04-23");
     ///
     /// assert!(date.set_ym0d(1999, 1, 29).is_err(), "1999-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
-    pub fn set_ym0d(&mut self, year: u16, month0: u8, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_ym0d(&mut self, year: u16, month0: u8, mday: u8) -> Result<(), Error> {
         validate_ym0d(year, month0, mday)?;
         unsafe {
             // This is safe because `write_digit2()` and `write_digit4()` fill
@@ -773,10 +773,10 @@ impl FullDateStr {
     /// assert_eq!(date.as_str(), "1999-04-23");
     ///
     /// assert!(date.set_ym1d(1999, 2, 29).is_err(), "1999-02-29 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn set_ym1d(&mut self, year: u16, month1: u8, mday: u8) -> Result<(), ValidationError> {
+    pub fn set_ym1d(&mut self, year: u16, month1: u8, mday: u8) -> Result<(), Error> {
         self.set_ym0d(year, month1.wrapping_sub(1), mday)
     }
 }
@@ -820,7 +820,7 @@ impl<'a> From<&'a FullDateStr> for &'a str {
 }
 
 impl<'a> TryFrom<&'a [u8]> for &'a FullDateStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
@@ -833,7 +833,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a FullDateStr {
 }
 
 impl<'a> TryFrom<&'a mut [u8]> for &'a mut FullDateStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
@@ -846,7 +846,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut FullDateStr {
 }
 
 impl<'a> TryFrom<&'a str> for &'a FullDateStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
@@ -859,7 +859,7 @@ impl<'a> TryFrom<&'a str> for &'a FullDateStr {
 }
 
 impl<'a> TryFrom<&'a mut str> for &'a mut FullDateStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
@@ -916,7 +916,7 @@ impl_cmp_symmetric!(str, &FullDateStr, str);
 ///
 /// let to_owned = FullDateStr::from_str("2001-12-31")?.to_owned();
 /// let into: FullDateString = FullDateStr::from_str("2001-12-31")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -955,7 +955,7 @@ impl FullDateString {
     /// // Usually you don't need to call `as_deref()` explicitly, because
     /// // `Deref<Target = FullDateStr>` trait is implemented.
     /// let _: &FullDateStr = date.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -978,7 +978,7 @@ impl FullDateString {
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
     /// let _: &mut FullDateStr = date.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -1055,7 +1055,7 @@ impl From<&FullDateStr> for FullDateString {
 }
 
 impl TryFrom<&[u8]> for FullDateString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
@@ -1064,7 +1064,7 @@ impl TryFrom<&[u8]> for FullDateString {
 }
 
 impl TryFrom<&str> for FullDateString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
@@ -1073,7 +1073,7 @@ impl TryFrom<&str> for FullDateString {
 }
 
 impl TryFrom<[u8; 10]> for FullDateString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: [u8; 10]) -> Result<Self, Self::Error> {
@@ -1109,7 +1109,7 @@ impl ops::DerefMut for FullDateString {
 }
 
 impl str::FromStr for FullDateString {
-    type Err = ValidationError;
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {

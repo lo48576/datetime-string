@@ -20,7 +20,7 @@ use serde::Serialize;
 
 use crate::common::TimeOffsetSign;
 
-use super::{ComponentKind, ErrorKind, ValidationError};
+use crate::error::{ComponentKind, Error, ErrorKind};
 
 /// Length of time-numoffset (e.g. "+12:34").
 const NUM_OFFSET_LEN: usize = 6;
@@ -38,7 +38,7 @@ const MINUTE_MAX: u8 = 59;
 /// Validates the given string as an RFC 3339 [`time-numoffset`] string.
 ///
 /// [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
-fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
+fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     let s: &[u8; NUM_OFFSET_LEN] = match s.len().cmp(&NUM_OFFSET_LEN) {
         Ordering::Greater => return Err(ErrorKind::TooLong.into()),
         Ordering::Less => return Err(ErrorKind::TooShort.into()),
@@ -153,12 +153,12 @@ impl TimeNumOffsetStr {
     /// assert!(TimeNumOffsetStr::from_str("-00:60").is_err(), "Invalid minute");
     /// assert!(TimeNumOffsetStr::from_str("?00:00").is_err(), "Invalid sign");
     /// assert!(TimeNumOffsetStr::from_str("00:00").is_err(), "Sign is missing");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     // `FromStr` trait cannot be implemented for a slice.
     #[allow(clippy::should_implement_trait)]
-    pub fn from_str(s: &str) -> Result<&Self, ValidationError> {
+    pub fn from_str(s: &str) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -175,10 +175,10 @@ impl TimeNumOffsetStr {
     ///
     /// offset.set_sign(TimeOffsetSign::Positive);
     /// assert_eq!(offset.as_str(), "+12:34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, ValidationError> {
+    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -203,10 +203,10 @@ impl TimeNumOffsetStr {
     /// assert!(TimeNumOffsetStr::from_bytes(b"-00:60").is_err(), "Invalid minute");
     /// assert!(TimeNumOffsetStr::from_bytes(b"?00:00").is_err(), "Invalid sign");
     /// assert!(TimeNumOffsetStr::from_bytes(b"00:00").is_err(), "Sign is missing");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes(s: &[u8]) -> Result<&Self, ValidationError> {
+    pub fn from_bytes(s: &[u8]) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -223,10 +223,10 @@ impl TimeNumOffsetStr {
     ///
     /// offset.set_sign(TimeOffsetSign::Positive);
     /// assert_eq!(offset.as_str(), "+12:34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, ValidationError> {
+    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -239,7 +239,7 @@ impl TimeNumOffsetStr {
     /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.as_str(), "-12:34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -258,7 +258,7 @@ impl TimeNumOffsetStr {
     /// let offset = TimeNumOffsetStr::from_bytes(b"-12:34")?;
     ///
     /// assert_eq!(offset.as_bytes(), b"-12:34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`as_bytes_fixed_len`]: #method.as_bytes_fixed_len
@@ -278,7 +278,7 @@ impl TimeNumOffsetStr {
     ///
     /// let fixed_len: &[u8; 6] = offset.as_bytes_fixed_len();
     /// assert_eq!(fixed_len, b"-12:34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -307,7 +307,7 @@ impl TimeNumOffsetStr {
     ///
     /// let negative = TimeNumOffsetStr::from_str("-12:34")?;
     /// assert_eq!(negative.sign(), TimeOffsetSign::Negative);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// Note that signs are preserved for `+00:00` and `-00:00`.
@@ -321,7 +321,7 @@ impl TimeNumOffsetStr {
     ///
     /// let negative0 = TimeNumOffsetStr::from_str("-00:00")?;
     /// assert_eq!(negative0.sign(), TimeOffsetSign::Negative);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -361,7 +361,7 @@ impl TimeNumOffsetStr {
     /// offset.set_sign(TimeOffsetSign::Positive);
     /// assert_eq!(offset.as_str(), "+12:34");
     /// assert_eq!(offset.sign(), TimeOffsetSign::Positive);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     pub fn set_sign(&mut self, sign: TimeOffsetSign) {
@@ -387,7 +387,7 @@ impl TimeNumOffsetStr {
     /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.hour_abs_str(), "12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -405,7 +405,7 @@ impl TimeNumOffsetStr {
     ///
     /// let hour_fixed_len: &[u8; 2] = offset.hour_abs_bytes_fixed_len();
     /// assert_eq!(hour_fixed_len, b"12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -438,7 +438,7 @@ impl TimeNumOffsetStr {
     /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.hour_abs(), 12);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -464,10 +464,10 @@ impl TimeNumOffsetStr {
     /// assert_eq!(time.as_str(), "-00:34");
     ///
     /// assert!(time.set_hour_abs(24).is_err(), "-24:34 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn set_hour_abs(&mut self, hour_abs: u8) -> Result<(), ValidationError> {
+    pub fn set_hour_abs(&mut self, hour_abs: u8) -> Result<(), Error> {
         if hour_abs > HOUR_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::OffsetHour).into());
         }
@@ -489,7 +489,7 @@ impl TimeNumOffsetStr {
     /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.hour_signed_str(), "-12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -507,7 +507,7 @@ impl TimeNumOffsetStr {
     ///
     /// let hour_fixed_len: &[u8; 3] = offset.hour_signed_bytes_fixed_len();
     /// assert_eq!(hour_fixed_len, b"-12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -526,7 +526,7 @@ impl TimeNumOffsetStr {
     /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.hour_signed(), -12);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// Note that both `+00` and `-00` are treaded as the same 0.
@@ -538,7 +538,7 @@ impl TimeNumOffsetStr {
     ///
     /// let negative = TimeNumOffsetStr::from_str("-00:59")?;
     /// assert_eq!(negative.hour_signed(), 0);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -569,14 +569,14 @@ impl TimeNumOffsetStr {
     /// assert_eq!(time.as_str(), "+23:34");
     ///
     /// assert!(time.set_sign_and_hour_abs(TimeOffsetSign::Negative, 24).is_err(), "-24:34 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     pub fn set_sign_and_hour_abs(
         &mut self,
         sign: TimeOffsetSign,
         hour_abs: u8,
-    ) -> Result<(), ValidationError> {
+    ) -> Result<(), Error> {
         self.set_hour_abs(hour_abs)?;
         self.set_sign(sign);
         debug_assert!(validate_bytes(self.as_bytes()).is_ok());
@@ -608,10 +608,10 @@ impl TimeNumOffsetStr {
     /// assert_eq!(time.as_str(), "-01:34");
     ///
     /// assert!(time.set_hour_signed(24).is_err(), "+24:34 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn set_hour_signed(&mut self, hour: i8) -> Result<(), ValidationError> {
+    pub fn set_hour_signed(&mut self, hour: i8) -> Result<(), Error> {
         let sign = if hour >= 0 {
             TimeOffsetSign::Positive
         } else {
@@ -631,7 +631,7 @@ impl TimeNumOffsetStr {
     /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.minute_str(), "34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -649,7 +649,7 @@ impl TimeNumOffsetStr {
     ///
     /// let minute_fixed_len: &[u8; 2] = offset.minute_bytes_fixed_len();
     /// assert_eq!(minute_fixed_len, b"34");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -682,7 +682,7 @@ impl TimeNumOffsetStr {
     /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.minute(), 34);
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -708,10 +708,10 @@ impl TimeNumOffsetStr {
     /// assert_eq!(time.as_str(), "-12:01");
     ///
     /// assert!(time.set_minute(60).is_err(), "-12:60 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn set_minute(&mut self, minute: u8) -> Result<(), ValidationError> {
+    pub fn set_minute(&mut self, minute: u8) -> Result<(), Error> {
         if minute > MINUTE_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::OffsetMinute).into());
         }
@@ -748,10 +748,10 @@ impl TimeNumOffsetStr {
     /// assert_eq!(time.as_str(), "-01:23");
     ///
     /// assert!(time.set_time_signed(24, 00).is_err(), "+24:00 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn set_time_signed(&mut self, hour: i8, minute: u8) -> Result<(), ValidationError> {
+    pub fn set_time_signed(&mut self, hour: i8, minute: u8) -> Result<(), Error> {
         let hour_abs = hour.wrapping_abs() as u8;
         let sign = if hour >= 0 {
             TimeOffsetSign::Positive
@@ -786,14 +786,14 @@ impl TimeNumOffsetStr {
     /// assert_eq!(time.as_str(), "+01:23");
     ///
     /// assert!(time.set_sign_and_time(TimeOffsetSign::Positive, 24, 00).is_err(), "+24:00 is invalid");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     pub fn set_sign_and_time(
         &mut self,
         sign: TimeOffsetSign,
         hour_abs: u8,
         minute: u8,
-    ) -> Result<(), ValidationError> {
+    ) -> Result<(), Error> {
         if hour_abs > HOUR_MAX {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::OffsetHour).into());
         }
@@ -852,7 +852,7 @@ impl<'a> From<&'a TimeNumOffsetStr> for &'a str {
 }
 
 impl<'a> TryFrom<&'a [u8]> for &'a TimeNumOffsetStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
@@ -865,7 +865,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a TimeNumOffsetStr {
 }
 
 impl<'a> TryFrom<&'a mut [u8]> for &'a mut TimeNumOffsetStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
@@ -878,7 +878,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut TimeNumOffsetStr {
 }
 
 impl<'a> TryFrom<&'a str> for &'a TimeNumOffsetStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
@@ -891,7 +891,7 @@ impl<'a> TryFrom<&'a str> for &'a TimeNumOffsetStr {
 }
 
 impl<'a> TryFrom<&'a mut str> for &'a mut TimeNumOffsetStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
@@ -948,7 +948,7 @@ impl_cmp_symmetric!(str, &TimeNumOffsetStr, str);
 ///
 /// let to_owned = TimeNumOffsetStr::from_str("-12:34")?.to_owned();
 /// let into: TimeNumOffsetString = TimeNumOffsetStr::from_str("-12:34")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -987,7 +987,7 @@ impl TimeNumOffsetString {
     /// // Usually you don't need to call `as_deref()` explicitly, because
     /// // `Deref<Target = TimeNumOffsetStr>` trait is implemented.
     /// let _: &TimeNumOffsetStr = offset.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -1010,7 +1010,7 @@ impl TimeNumOffsetString {
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
     /// let _: &mut TimeNumOffsetStr = offset.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -1087,7 +1087,7 @@ impl From<&TimeNumOffsetStr> for TimeNumOffsetString {
 }
 
 impl TryFrom<&[u8]> for TimeNumOffsetString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
@@ -1096,7 +1096,7 @@ impl TryFrom<&[u8]> for TimeNumOffsetString {
 }
 
 impl TryFrom<&str> for TimeNumOffsetString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
@@ -1105,7 +1105,7 @@ impl TryFrom<&str> for TimeNumOffsetString {
 }
 
 impl TryFrom<[u8; 6]> for TimeNumOffsetString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: [u8; 6]) -> Result<Self, Self::Error> {
@@ -1141,7 +1141,7 @@ impl ops::DerefMut for TimeNumOffsetString {
 }
 
 impl str::FromStr for TimeNumOffsetString {
-    type Err = ValidationError;
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {

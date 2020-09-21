@@ -10,7 +10,9 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{validate_bytes, PartialTimeStr, ValidationError};
+use crate::Error;
+
+use super::{validate_bytes, PartialTimeStr};
 
 /// RFC 3339 [`partial-time`] string slice.
 ///
@@ -31,7 +33,7 @@ use super::{validate_bytes, PartialTimeStr, ValidationError};
 ///
 /// let to_owned = PartialTimeStr::from_str("12:34:56.7890")?.to_owned();
 /// let into: PartialTimeString = PartialTimeStr::from_str("12:34:56.7890")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -81,7 +83,7 @@ impl PartialTimeString {
     /// // Usually you don't need to call `as_deref()` explicitly, because
     /// // `Deref<Target = PartialTimeStr>` trait is implemented.
     /// let _: &PartialTimeStr = time.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -104,7 +106,7 @@ impl PartialTimeString {
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
     /// let _: &mut PartialTimeStr = time.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -175,7 +177,7 @@ impl From<&PartialTimeStr> for PartialTimeString {
 }
 
 impl TryFrom<&[u8]> for PartialTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
@@ -184,7 +186,7 @@ impl TryFrom<&[u8]> for PartialTimeString {
 }
 
 impl TryFrom<&str> for PartialTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
@@ -193,7 +195,7 @@ impl TryFrom<&str> for PartialTimeString {
 }
 
 impl TryFrom<Vec<u8>> for PartialTimeString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
@@ -229,7 +231,7 @@ impl ops::DerefMut for PartialTimeString {
 }
 
 impl str::FromStr for PartialTimeString {
-    type Err = ValidationError;
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {

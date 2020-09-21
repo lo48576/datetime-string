@@ -12,7 +12,9 @@ use core::{
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{ErrorKind, FullDateStr, FullTimeStr, ValidationError};
+use crate::error::{Error, ErrorKind};
+
+use super::{FullDateStr, FullTimeStr};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::DateTimeString;
@@ -38,7 +40,7 @@ const TIME_RANGE: RangeFrom<usize> = (T_POS + 1)..;
 /// Validates the given string as an RFC 3339 [`date-time`].
 ///
 /// [`date-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
-fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
+fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     if s.len() < DATETIME_LEN_MIN {
         return Err(ErrorKind::TooShort.into());
     }
@@ -124,12 +126,12 @@ impl DateTimeStr {
     /// assert!(DateTimeStr::from_str("2000-02-29T12:34:56Z").is_ok());
     /// assert!(DateTimeStr::from_str("9999-12-31T23:59:59+23:59").is_ok());
     /// assert!(DateTimeStr::from_str("0000-01-01T00:00:00.0-00:00").is_ok());
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     // `FromStr` trait cannot be implemented for a slice.
     #[allow(clippy::should_implement_trait)]
-    pub fn from_str(s: &str) -> Result<&Self, ValidationError> {
+    pub fn from_str(s: &str) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -145,10 +147,10 @@ impl DateTimeStr {
     ///
     /// datetime.date_mut().set_year(1999);
     /// assert_eq!(datetime.as_str(), "1999-06-17T12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, ValidationError> {
+    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -164,10 +166,10 @@ impl DateTimeStr {
     /// assert!(DateTimeStr::from_bytes(b"2001-06-17T12:34:56Z").is_ok());
     /// assert!(DateTimeStr::from_bytes(b"9999-12-31T23:59:59+23:59").is_ok());
     /// assert!(DateTimeStr::from_bytes(b"0000-01-01T00:00:00.0-00:00").is_ok());
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes(s: &[u8]) -> Result<&Self, ValidationError> {
+    pub fn from_bytes(s: &[u8]) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -183,10 +185,10 @@ impl DateTimeStr {
     ///
     /// datetime.date_mut().set_year(1999);
     /// assert_eq!(datetime.as_str(), "1999-06-17T12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, ValidationError> {
+    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -199,7 +201,7 @@ impl DateTimeStr {
     /// let datetime = DateTimeStr::from_str("2001-06-17T12:34:56.7890-23:12")?;
     ///
     /// assert_eq!(datetime.as_str(), "2001-06-17T12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -218,7 +220,7 @@ impl DateTimeStr {
     /// let datetime = DateTimeStr::from_str("2001-06-17T12:34:56.7890-23:12")?;
     ///
     /// assert_eq!(datetime.as_bytes(), b"2001-06-17T12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     ///
     /// [`as_bytes_fixed_len`]: #method.as_bytes_fixed_len
@@ -240,7 +242,7 @@ impl DateTimeStr {
     /// let (date, time) = datetime.decompose();
     /// assert_eq!(date.as_str(), "2001-06-17");
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -279,7 +281,7 @@ impl DateTimeStr {
     /// date.set_year(1999)?;
     /// time.partial_time_mut().secfrac_mut().unwrap().fill_with_zero();
     /// assert_eq!(datetime.as_str(), "1999-06-17T12:34:56.0000-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -313,7 +315,7 @@ impl DateTimeStr {
     ///
     /// let date = datetime.date();
     /// assert_eq!(date.as_str(), "2001-06-17");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -341,7 +343,7 @@ impl DateTimeStr {
     ///
     /// date.set_year(1999)?;
     /// assert_eq!(datetime.as_str(), "1999-06-17T12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -365,7 +367,7 @@ impl DateTimeStr {
     ///
     /// let time = datetime.time();
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -394,7 +396,7 @@ impl DateTimeStr {
     ///
     /// time.partial_time_mut().secfrac_mut().unwrap().fill_with_zero();
     /// assert_eq!(datetime.as_str(), "2001-06-17T12:34:56.0000-23:12");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -447,7 +449,7 @@ impl<'a> From<&'a DateTimeStr> for &'a str {
 }
 
 impl<'a> TryFrom<&'a [u8]> for &'a DateTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
@@ -460,7 +462,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a DateTimeStr {
 }
 
 impl<'a> TryFrom<&'a mut [u8]> for &'a mut DateTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
@@ -473,7 +475,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut DateTimeStr {
 }
 
 impl<'a> TryFrom<&'a str> for &'a DateTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
@@ -486,7 +488,7 @@ impl<'a> TryFrom<&'a str> for &'a DateTimeStr {
 }
 
 impl<'a> TryFrom<&'a mut str> for &'a mut DateTimeStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {

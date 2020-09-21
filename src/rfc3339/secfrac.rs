@@ -7,7 +7,7 @@ use core::{convert::TryFrom, fmt, ops, str};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{ComponentKind, ErrorKind, ValidationError};
+use crate::error::{ComponentKind, Error, ErrorKind};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::SecfracString;
@@ -18,7 +18,7 @@ mod owned;
 /// Validates the given string as an RFC 3339 [`time-secfrac`] string.
 ///
 /// [`time-secfrac`]: https://tools.ietf.org/html/rfc3339#section-5.6
-fn validate_bytes(s: &[u8]) -> Result<(), ValidationError> {
+fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     if s.len() <= 1 {
         return Err(ErrorKind::TooShort.into());
     }
@@ -110,12 +110,12 @@ impl SecfracStr {
     /// assert!(SecfracStr::from_str("0").is_err(), "A leading period is required");
     /// assert!(SecfracStr::from_str(".").is_err(), "One or more digits are required");
     ///
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     // `FromStr` trait cannot be implemented for a slice.
     #[allow(clippy::should_implement_trait)]
-    pub fn from_str(s: &str) -> Result<&Self, ValidationError> {
+    pub fn from_str(s: &str) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -133,10 +133,10 @@ impl SecfracStr {
     /// assert_eq!(secfrac.as_str(), ".0000");
     ///
     /// assert_eq!(buf, ".0000");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, ValidationError> {
+    pub fn from_mut_str(s: &mut str) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -156,10 +156,10 @@ impl SecfracStr {
     /// assert!(SecfracStr::from_bytes(b"0").is_err(), "A leading period is required");
     /// assert!(SecfracStr::from_bytes(b".").is_err(), "One or more digits are required");
     ///
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes(s: &[u8]) -> Result<&Self, ValidationError> {
+    pub fn from_bytes(s: &[u8]) -> Result<&Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -177,10 +177,10 @@ impl SecfracStr {
     /// assert_eq!(secfrac.as_str(), ".0000");
     ///
     /// assert_eq!(&buf[..], b".0000");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
-    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, ValidationError> {
+    pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
     }
 
@@ -193,7 +193,7 @@ impl SecfracStr {
     /// let secfrac = SecfracStr::from_str(".1234")?;
     ///
     /// assert_eq!(secfrac.as_str(), ".1234");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -210,7 +210,7 @@ impl SecfracStr {
     /// let secfrac = SecfracStr::from_str(".1234")?;
     ///
     /// assert_eq!(secfrac.as_str(), ".1234");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -229,7 +229,7 @@ impl SecfracStr {
     ///
     /// let secfrac2 = SecfracStr::from_str(".012340")?;
     /// assert_eq!(secfrac2.digits(), "012340");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -251,7 +251,7 @@ impl SecfracStr {
     ///
     /// let more_precise = SecfracStr::from_str(".012345678901")?;
     /// assert_eq!(more_precise.milliseconds_secfrac(), Some(expected));
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -278,7 +278,7 @@ impl SecfracStr {
     ///
     /// let more_precise = SecfracStr::from_str(".012345678901")?;
     /// assert_eq!(more_precise.milliseconds_bytes_fixed_len(), Some(b"012"));
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     pub fn milliseconds_bytes_fixed_len(&self) -> Option<&[u8; 3]> {
         self.as_bytes().get(1..4).map(|s| {
@@ -305,7 +305,7 @@ impl SecfracStr {
     ///
     /// let more_precise = SecfracStr::from_str(".012345678901")?;
     /// assert_eq!(more_precise.microseconds_secfrac(), Some(expected));
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -332,7 +332,7 @@ impl SecfracStr {
     ///
     /// let more_precise = SecfracStr::from_str(".012345678901")?;
     /// assert_eq!(more_precise.microseconds_bytes_fixed_len(), Some(b"012345"));
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     pub fn microseconds_bytes_fixed_len(&self) -> Option<&[u8; 6]> {
         self.as_bytes().get(1..7).map(|s| {
@@ -359,7 +359,7 @@ impl SecfracStr {
     ///
     /// let more_precise = SecfracStr::from_str(".012345678901")?;
     /// assert_eq!(more_precise.nanoseconds_secfrac(), Some(expected));
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -386,7 +386,7 @@ impl SecfracStr {
     ///
     /// let more_precise = SecfracStr::from_str(".012345678901")?;
     /// assert_eq!(more_precise.nanoseconds_bytes_fixed_len(), Some(b"012345678"));
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     pub fn nanoseconds_bytes_fixed_len(&self) -> Option<&[u8; 9]> {
         self.as_bytes().get(1..10).map(|s| {
@@ -413,7 +413,7 @@ impl SecfracStr {
     /// assert_eq!(secfrac.as_str(), ".0000");
     ///
     /// assert_eq!(buf, ".0000");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     pub fn fill_with_zero(&mut self) {
@@ -447,7 +447,7 @@ impl SecfracStr {
     /// assert_eq!(secfrac.as_str(), ".9999");
     ///
     /// assert_eq!(buf, ".9999");
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     pub fn fill_with_nine(&mut self) {
@@ -507,7 +507,7 @@ impl<'a> From<&'a SecfracStr> for &'a str {
 }
 
 impl<'a> TryFrom<&'a [u8]> for &'a SecfracStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
@@ -520,7 +520,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a SecfracStr {
 }
 
 impl<'a> TryFrom<&'a mut [u8]> for &'a mut SecfracStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
@@ -533,7 +533,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut SecfracStr {
 }
 
 impl<'a> TryFrom<&'a str> for &'a SecfracStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
@@ -546,7 +546,7 @@ impl<'a> TryFrom<&'a str> for &'a SecfracStr {
 }
 
 impl<'a> TryFrom<&'a mut str> for &'a mut SecfracStr {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {

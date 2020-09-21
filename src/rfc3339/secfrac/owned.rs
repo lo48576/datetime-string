@@ -10,7 +10,9 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{validate_bytes, SecfracStr, ValidationError};
+use crate::Error;
+
+use super::{validate_bytes, SecfracStr};
 
 /// RFC 3339 [`time-secfrac`] string slice without secfrac part.
 ///
@@ -33,7 +35,7 @@ use super::{validate_bytes, SecfracStr, ValidationError};
 ///
 /// let to_owned = SecfracStr::from_str(".1234")?.to_owned();
 /// let into: SecfracString = SecfracStr::from_str(".1234")?.into();
-/// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+/// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
 /// [`time-secfrac`]: https://tools.ietf.org/html/rfc3339#section-5.6
@@ -83,7 +85,7 @@ impl SecfracString {
     /// // Usually you don't need to call `as_deref()` explicitly, because
     /// // `Deref<Target = SecfracStr>` trait is implemented.
     /// let _: &SecfracStr = secfrac.as_deref();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -106,7 +108,7 @@ impl SecfracString {
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
     /// let _: &mut SecfracStr = secfrac.as_deref_mut();
-    /// # Ok::<_, datetime_string::rfc3339::ValidationError>(())
+    /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
@@ -177,7 +179,7 @@ impl From<&SecfracStr> for SecfracString {
 }
 
 impl TryFrom<&[u8]> for SecfracString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
@@ -186,7 +188,7 @@ impl TryFrom<&[u8]> for SecfracString {
 }
 
 impl TryFrom<&str> for SecfracString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
@@ -195,7 +197,7 @@ impl TryFrom<&str> for SecfracString {
 }
 
 impl TryFrom<Vec<u8>> for SecfracString {
-    type Error = ValidationError;
+    type Error = Error;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
@@ -231,7 +233,7 @@ impl ops::DerefMut for SecfracString {
 }
 
 impl str::FromStr for SecfracString {
-    type Err = ValidationError;
+    type Err = Error;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
