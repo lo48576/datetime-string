@@ -1,4 +1,6 @@
-//! RFC 3339 [`time-numoffset`] string types.
+//! Time offset in `+hh:mm` or `-hh:mm` format.
+//!
+//! This is also an RFC 3339 [`time-numoffset`].
 //!
 //! [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
@@ -73,7 +75,9 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-/// RFC 3339 [`time-numoffset`] string slice.
+/// String slice in `+hh:mm` or `-hh:mm` format.
+///
+/// This is also an RFC 3339 [`time-numoffset`] string.
 ///
 /// [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -85,10 +89,10 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct TimeNumOffsetStr(str);
+pub struct TimeNumOffsetColonStr(str);
 
-impl TimeNumOffsetStr {
-    /// Creates a `&TimeNumOffsetStr` from the given byte slice.
+impl TimeNumOffsetColonStr {
+    /// Creates a `&TimeNumOffsetColonStr` from the given byte slice.
     ///
     /// # Safety
     ///
@@ -99,7 +103,7 @@ impl TimeNumOffsetStr {
         Self::from_str_unchecked(str::from_utf8_unchecked(s))
     }
 
-    /// Creates a `&mut TimeNumOffsetStr` from the given mutable byte slice.
+    /// Creates a `&mut TimeNumOffsetColonStr` from the given mutable byte slice.
     ///
     /// # Safety
     ///
@@ -110,7 +114,7 @@ impl TimeNumOffsetStr {
         Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
     }
 
-    /// Creates a `&TimeNumOffsetStr` from the given string slice.
+    /// Creates a `&TimeNumOffsetColonStr` from the given string slice.
     ///
     /// # Safety
     ///
@@ -118,10 +122,10 @@ impl TimeNumOffsetStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const TimeNumOffsetStr)
+        &*(s as *const str as *const TimeNumOffsetColonStr)
     }
 
-    /// Creates a `&mut TimeNumOffsetStr` from the given mutable string slice.
+    /// Creates a `&mut TimeNumOffsetColonStr` from the given mutable string slice.
     ///
     /// # Safety
     ///
@@ -129,30 +133,30 @@ impl TimeNumOffsetStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut TimeNumOffsetStr)
+        &mut *(s as *mut str as *mut TimeNumOffsetColonStr)
     }
 
-    /// Creates a new `&TimeNumOffsetStr` from a string slice.
+    /// Creates a new `&TimeNumOffsetColonStr` from a string slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     /// assert_eq!(offset.as_str(), "-12:34");
     ///
-    /// assert!(TimeNumOffsetStr::from_str("+00:00").is_ok());
-    /// assert!(TimeNumOffsetStr::from_str("+23:59").is_ok());
-    /// assert!(TimeNumOffsetStr::from_str("-00:00").is_ok());
-    /// assert!(TimeNumOffsetStr::from_str("-23:59").is_ok());
+    /// assert!(TimeNumOffsetColonStr::from_str("+00:00").is_ok());
+    /// assert!(TimeNumOffsetColonStr::from_str("+23:59").is_ok());
+    /// assert!(TimeNumOffsetColonStr::from_str("-00:00").is_ok());
+    /// assert!(TimeNumOffsetColonStr::from_str("-23:59").is_ok());
     ///
-    /// assert!(TimeNumOffsetStr::from_str("Z").is_err(), "Not time-numoffset");
-    /// assert!(TimeNumOffsetStr::from_str("+24:00").is_err(), "Invalid hour");
-    /// assert!(TimeNumOffsetStr::from_str("+00:60").is_err(), "Invalid minute");
-    /// assert!(TimeNumOffsetStr::from_str("-24:00").is_err(), "Invalid hour");
-    /// assert!(TimeNumOffsetStr::from_str("-00:60").is_err(), "Invalid minute");
-    /// assert!(TimeNumOffsetStr::from_str("?00:00").is_err(), "Invalid sign");
-    /// assert!(TimeNumOffsetStr::from_str("00:00").is_err(), "Sign is missing");
+    /// assert!(TimeNumOffsetColonStr::from_str("Z").is_err(), "Not time-numoffset");
+    /// assert!(TimeNumOffsetColonStr::from_str("+24:00").is_err(), "Invalid hour");
+    /// assert!(TimeNumOffsetColonStr::from_str("+00:60").is_err(), "Invalid minute");
+    /// assert!(TimeNumOffsetColonStr::from_str("-24:00").is_err(), "Invalid hour");
+    /// assert!(TimeNumOffsetColonStr::from_str("-00:60").is_err(), "Invalid minute");
+    /// assert!(TimeNumOffsetColonStr::from_str("?00:00").is_err(), "Invalid sign");
+    /// assert!(TimeNumOffsetColonStr::from_str("00:00").is_err(), "Sign is missing");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
@@ -162,15 +166,15 @@ impl TimeNumOffsetStr {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&mut TimeNumOffsetStr` from a mutable string slice.
+    /// Creates a new `&mut TimeNumOffsetColonStr` from a mutable string slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf = "-12:34".to_owned();
-    /// let offset = TimeNumOffsetStr::from_mut_str(&mut buf)?;
+    /// let offset = TimeNumOffsetColonStr::from_mut_str(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
     ///
     /// offset.set_sign(TimeOffsetSign::Positive);
@@ -182,27 +186,27 @@ impl TimeNumOffsetStr {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&TimeNumOffsetStr` from a byte slice.
+    /// Creates a new `&TimeNumOffsetColonStr` from a byte slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_bytes(b"-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_bytes(b"-12:34")?;
     /// assert_eq!(offset.as_str(), "-12:34");
     ///
-    /// assert!(TimeNumOffsetStr::from_bytes(b"+00:00").is_ok());
-    /// assert!(TimeNumOffsetStr::from_bytes(b"+23:59").is_ok());
-    /// assert!(TimeNumOffsetStr::from_bytes(b"-00:00").is_ok());
-    /// assert!(TimeNumOffsetStr::from_bytes(b"-23:59").is_ok());
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"+00:00").is_ok());
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"+23:59").is_ok());
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"-00:00").is_ok());
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"-23:59").is_ok());
     ///
-    /// assert!(TimeNumOffsetStr::from_bytes(b"Z").is_err(), "Not time-numoffset");
-    /// assert!(TimeNumOffsetStr::from_bytes(b"+24:00").is_err(), "Invalid hour");
-    /// assert!(TimeNumOffsetStr::from_bytes(b"+00:60").is_err(), "Invalid minute");
-    /// assert!(TimeNumOffsetStr::from_bytes(b"-24:00").is_err(), "Invalid hour");
-    /// assert!(TimeNumOffsetStr::from_bytes(b"-00:60").is_err(), "Invalid minute");
-    /// assert!(TimeNumOffsetStr::from_bytes(b"?00:00").is_err(), "Invalid sign");
-    /// assert!(TimeNumOffsetStr::from_bytes(b"00:00").is_err(), "Sign is missing");
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"Z").is_err(), "Not time-numoffset");
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"+24:00").is_err(), "Invalid hour");
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"+00:60").is_err(), "Invalid minute");
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"-24:00").is_err(), "Invalid hour");
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"-00:60").is_err(), "Invalid minute");
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"?00:00").is_err(), "Invalid sign");
+    /// assert!(TimeNumOffsetColonStr::from_bytes(b"00:00").is_err(), "Sign is missing");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
@@ -210,15 +214,15 @@ impl TimeNumOffsetStr {
         TryFrom::try_from(s)
     }
 
-    /// Creates a new `&mut TimeNumOffsetStr` from a mutable byte slice.
+    /// Creates a new `&mut TimeNumOffsetColonStr` from a mutable byte slice.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
-    /// let offset = TimeNumOffsetStr::from_bytes_mut(&mut buf)?;
+    /// let offset = TimeNumOffsetColonStr::from_bytes_mut(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
     ///
     /// offset.set_sign(TimeOffsetSign::Positive);
@@ -235,8 +239,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.as_str(), "-12:34");
     /// # Ok::<_, datetime_string::Error>(())
@@ -254,8 +258,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_bytes(b"-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_bytes(b"-12:34")?;
     ///
     /// assert_eq!(offset.as_bytes(), b"-12:34");
     /// # Ok::<_, datetime_string::Error>(())
@@ -273,8 +277,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// let fixed_len: &[u8; 6] = offset.as_bytes_fixed_len();
     /// assert_eq!(fixed_len, b"-12:34");
@@ -286,7 +290,7 @@ impl TimeNumOffsetStr {
         debug_assert_eq!(
             self.len(),
             NUM_OFFSET_LEN,
-            "TimeNumOffsetStr must always be 6 bytes"
+            "TimeNumOffsetColonStr must always be 6 bytes"
         );
 
         let ptr = self.0.as_ptr() as *const [u8; NUM_OFFSET_LEN];
@@ -299,13 +303,13 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     ///
-    /// let positive = TimeNumOffsetStr::from_str("+12:34")?;
+    /// let positive = TimeNumOffsetColonStr::from_str("+12:34")?;
     /// assert_eq!(positive.sign(), TimeOffsetSign::Positive);
     ///
-    /// let negative = TimeNumOffsetStr::from_str("-12:34")?;
+    /// let negative = TimeNumOffsetColonStr::from_str("-12:34")?;
     /// assert_eq!(negative.sign(), TimeOffsetSign::Negative);
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
@@ -313,13 +317,13 @@ impl TimeNumOffsetStr {
     /// Note that signs are preserved for `+00:00` and `-00:00`.
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     ///
-    /// let positive0 = TimeNumOffsetStr::from_str("+00:00")?;
+    /// let positive0 = TimeNumOffsetColonStr::from_str("+00:00")?;
     /// assert_eq!(positive0.sign(), TimeOffsetSign::Positive);
     ///
-    /// let negative0 = TimeNumOffsetStr::from_str("-00:00")?;
+    /// let negative0 = TimeNumOffsetColonStr::from_str("-00:00")?;
     /// assert_eq!(negative0.sign(), TimeOffsetSign::Negative);
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
@@ -351,10 +355,10 @@ impl TimeNumOffsetStr {
     /// Sets the given sign.
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf = "-12:34".to_owned();
-    /// let offset = TimeNumOffsetStr::from_mut_str(&mut buf)?;
+    /// let offset = TimeNumOffsetColonStr::from_mut_str(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
     /// assert_eq!(offset.sign(), TimeOffsetSign::Negative);
     ///
@@ -383,8 +387,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.hour_abs_str(), "12");
     /// # Ok::<_, datetime_string::Error>(())
@@ -400,8 +404,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// let hour_fixed_len: &[u8; 2] = offset.hour_abs_bytes_fixed_len();
     /// assert_eq!(hour_fixed_len, b"12");
@@ -434,8 +438,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.hour_abs(), 12);
     /// # Ok::<_, datetime_string::Error>(())
@@ -455,9 +459,9 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// let mut buf: [u8; 6] = *b"-12:34";
-    /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
     ///
     /// time.set_hour_abs(0)?;
@@ -485,8 +489,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.hour_signed_str(), "-12");
     /// # Ok::<_, datetime_string::Error>(())
@@ -502,8 +506,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// let hour_fixed_len: &[u8; 3] = offset.hour_signed_bytes_fixed_len();
     /// assert_eq!(hour_fixed_len, b"-12");
@@ -522,8 +526,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.hour_signed(), -12);
     /// # Ok::<_, datetime_string::Error>(())
@@ -532,11 +536,11 @@ impl TimeNumOffsetStr {
     /// Note that both `+00` and `-00` are treaded as the same 0.
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let positive = TimeNumOffsetStr::from_str("+00:59")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let positive = TimeNumOffsetColonStr::from_str("+00:59")?;
     /// assert_eq!(positive.hour_signed(), 0);
     ///
-    /// let negative = TimeNumOffsetStr::from_str("-00:59")?;
+    /// let negative = TimeNumOffsetColonStr::from_str("-00:59")?;
     /// assert_eq!(negative.hour_signed(), 0);
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
@@ -559,10 +563,10 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
-    /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
     ///
     /// time.set_sign_and_hour_abs(TimeOffsetSign::Positive, 23)?;
@@ -595,10 +599,10 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
-    /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
     ///
     /// time.set_hour_signed(0)?;
@@ -627,8 +631,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.minute_str(), "34");
     /// # Ok::<_, datetime_string::Error>(())
@@ -644,8 +648,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// let minute_fixed_len: &[u8; 2] = offset.minute_bytes_fixed_len();
     /// assert_eq!(minute_fixed_len, b"34");
@@ -678,8 +682,8 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = TimeNumOffsetStr::from_str("-12:34")?;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
     ///
     /// assert_eq!(offset.minute(), 34);
     /// # Ok::<_, datetime_string::Error>(())
@@ -699,9 +703,9 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// let mut buf: [u8; 6] = *b"-12:34";
-    /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
     ///
     /// time.set_minute(01)?;
@@ -735,10 +739,10 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
-    /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
     ///
     /// time.set_time_signed(0, 56)?;
@@ -773,10 +777,10 @@ impl TimeNumOffsetStr {
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetStr;
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
-    /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
+    /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
     ///
     /// time.set_sign_and_time(TimeOffsetSign::Negative, 0, 56)?;
@@ -814,8 +818,8 @@ impl TimeNumOffsetStr {
 }
 
 #[cfg(feature = "alloc")]
-impl alloc::borrow::ToOwned for TimeNumOffsetStr {
-    type Owned = TimeNumOffsetString;
+impl alloc::borrow::ToOwned for TimeNumOffsetColonStr {
+    type Owned = TimeNumOffsetColonString;
 
     #[inline]
     fn to_owned(&self) -> Self::Owned {
@@ -823,35 +827,35 @@ impl alloc::borrow::ToOwned for TimeNumOffsetStr {
     }
 }
 
-impl AsRef<[u8]> for TimeNumOffsetStr {
+impl AsRef<[u8]> for TimeNumOffsetColonStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-impl AsRef<str> for TimeNumOffsetStr {
+impl AsRef<str> for TimeNumOffsetColonStr {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl AsRef<TimeNumOffsetStr> for TimeNumOffsetStr {
+impl AsRef<TimeNumOffsetColonStr> for TimeNumOffsetColonStr {
     #[inline]
-    fn as_ref(&self) -> &TimeNumOffsetStr {
+    fn as_ref(&self) -> &TimeNumOffsetColonStr {
         self
     }
 }
 
-impl<'a> From<&'a TimeNumOffsetStr> for &'a str {
+impl<'a> From<&'a TimeNumOffsetColonStr> for &'a str {
     #[inline]
-    fn from(v: &'a TimeNumOffsetStr) -> Self {
+    fn from(v: &'a TimeNumOffsetColonStr) -> Self {
         v.as_str()
     }
 }
 
-impl<'a> TryFrom<&'a [u8]> for &'a TimeNumOffsetStr {
+impl<'a> TryFrom<&'a [u8]> for &'a TimeNumOffsetColonStr {
     type Error = Error;
 
     #[inline]
@@ -859,12 +863,12 @@ impl<'a> TryFrom<&'a [u8]> for &'a TimeNumOffsetStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid time-numoffset string is also an ASCII string.
-            TimeNumOffsetStr::from_bytes_unchecked(v)
+            TimeNumOffsetColonStr::from_bytes_unchecked(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a mut [u8]> for &'a mut TimeNumOffsetStr {
+impl<'a> TryFrom<&'a mut [u8]> for &'a mut TimeNumOffsetColonStr {
     type Error = Error;
 
     #[inline]
@@ -872,12 +876,12 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut TimeNumOffsetStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid time-numoffset string is also an ASCII string.
-            TimeNumOffsetStr::from_bytes_unchecked_mut(v)
+            TimeNumOffsetColonStr::from_bytes_unchecked_mut(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a str> for &'a TimeNumOffsetStr {
+impl<'a> TryFrom<&'a str> for &'a TimeNumOffsetColonStr {
     type Error = Error;
 
     #[inline]
@@ -885,12 +889,12 @@ impl<'a> TryFrom<&'a str> for &'a TimeNumOffsetStr {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
             // This is safe because a valid time-numoffset string is also an ASCII string.
-            TimeNumOffsetStr::from_str_unchecked(v)
+            TimeNumOffsetColonStr::from_str_unchecked(v)
         })
     }
 }
 
-impl<'a> TryFrom<&'a mut str> for &'a mut TimeNumOffsetStr {
+impl<'a> TryFrom<&'a mut str> for &'a mut TimeNumOffsetColonStr {
     type Error = Error;
 
     #[inline]
@@ -898,19 +902,19 @@ impl<'a> TryFrom<&'a mut str> for &'a mut TimeNumOffsetStr {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
             // This is safe because a valid time-numoffset string is also an ASCII string.
-            TimeNumOffsetStr::from_str_unchecked_mut(v)
+            TimeNumOffsetColonStr::from_str_unchecked_mut(v)
         })
     }
 }
 
-impl fmt::Display for TimeNumOffsetStr {
+impl fmt::Display for TimeNumOffsetColonStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl ops::Deref for TimeNumOffsetStr {
+impl ops::Deref for TimeNumOffsetColonStr {
     type Target = str;
 
     #[inline]
@@ -919,35 +923,37 @@ impl ops::Deref for TimeNumOffsetStr {
     }
 }
 
-impl_cmp_symmetric!(str, TimeNumOffsetStr, &TimeNumOffsetStr);
-impl_cmp_symmetric!([u8], TimeNumOffsetStr, [u8]);
-impl_cmp_symmetric!([u8], TimeNumOffsetStr, &[u8]);
-impl_cmp_symmetric!([u8], &TimeNumOffsetStr, [u8]);
-impl_cmp_symmetric!(str, TimeNumOffsetStr, str);
-impl_cmp_symmetric!(str, TimeNumOffsetStr, &str);
-impl_cmp_symmetric!(str, &TimeNumOffsetStr, str);
+impl_cmp_symmetric!(str, TimeNumOffsetColonStr, &TimeNumOffsetColonStr);
+impl_cmp_symmetric!([u8], TimeNumOffsetColonStr, [u8]);
+impl_cmp_symmetric!([u8], TimeNumOffsetColonStr, &[u8]);
+impl_cmp_symmetric!([u8], &TimeNumOffsetColonStr, [u8]);
+impl_cmp_symmetric!(str, TimeNumOffsetColonStr, str);
+impl_cmp_symmetric!(str, TimeNumOffsetColonStr, &str);
+impl_cmp_symmetric!(str, &TimeNumOffsetColonStr, str);
 
-/// RFC 3339 [`time-numoffset`] string slice.
+/// Owned string in `+hh:mm` or `-hh:mm` format.
+///
+/// This is also an RFC 3339 [`time-numoffset`] string.
 ///
 /// This is a fixed length string, and implements [`Copy`] trait.
 ///
 /// To create a value of this type, use [`<str>::parse()`] method or
-/// [`std::convert::TryFrom`] trait, or convert from `&TimeNumOffsetStr`.
+/// [`std::convert::TryFrom`] trait, or convert from `&TimeNumOffsetColonStr`.
 ///
 /// # Examples
 ///
 /// ```
-/// # use datetime_string::rfc3339::TimeNumOffsetString;
-/// use datetime_string::rfc3339::TimeNumOffsetStr;
+/// # use datetime_string::common::TimeNumOffsetColonString;
+/// use datetime_string::common::TimeNumOffsetColonStr;
 /// use std::convert::TryFrom;
 ///
-/// let try_from = TimeNumOffsetString::try_from("-12:34")?;
+/// let try_from = TimeNumOffsetColonString::try_from("-12:34")?;
 ///
-/// let parse = "-12:34".parse::<TimeNumOffsetString>()?;
-/// let parse2: TimeNumOffsetString = "-12:34".parse()?;
+/// let parse = "-12:34".parse::<TimeNumOffsetColonString>()?;
+/// let parse2: TimeNumOffsetColonString = "-12:34".parse()?;
 ///
-/// let to_owned = TimeNumOffsetStr::from_str("-12:34")?.to_owned();
-/// let into: TimeNumOffsetString = TimeNumOffsetStr::from_str("-12:34")?.into();
+/// let to_owned = TimeNumOffsetColonStr::from_str("-12:34")?.to_owned();
+/// let into: TimeNumOffsetColonString = TimeNumOffsetColonStr::from_str("-12:34")?.into();
 /// # Ok::<_, datetime_string::Error>(())
 /// ```
 ///
@@ -961,10 +967,10 @@ impl_cmp_symmetric!(str, &TimeNumOffsetStr, str);
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct TimeNumOffsetString([u8; NUM_OFFSET_LEN]);
+pub struct TimeNumOffsetColonString([u8; NUM_OFFSET_LEN]);
 
-impl TimeNumOffsetString {
-    /// Creates a `TimeNumOffsetString` from the given bytes.
+impl TimeNumOffsetColonString {
+    /// Creates a `TimeNumOffsetColonString` from the given bytes.
     ///
     /// # Safety
     ///
@@ -975,100 +981,100 @@ impl TimeNumOffsetString {
         Self(s)
     }
 
-    /// Returns a `&TimeNumOffsetStr` for the string.
+    /// Returns a `&TimeNumOffsetColonStr` for the string.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetString;
-    /// use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let offset = "-12:34".parse::<TimeNumOffsetString>()?;
+    /// # use datetime_string::common::TimeNumOffsetColonString;
+    /// use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = "-12:34".parse::<TimeNumOffsetColonString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
-    /// // `Deref<Target = TimeNumOffsetStr>` trait is implemented.
-    /// let _: &TimeNumOffsetStr = offset.as_deref();
+    /// // `Deref<Target = TimeNumOffsetColonStr>` trait is implemented.
+    /// let _: &TimeNumOffsetColonStr = offset.as_deref();
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_deref(&self) -> &TimeNumOffsetStr {
+    pub fn as_deref(&self) -> &TimeNumOffsetColonStr {
         unsafe {
             // This is safe because `self.0` is valid time-numoffset string.
-            TimeNumOffsetStr::from_bytes_unchecked(&self.0)
+            TimeNumOffsetColonStr::from_bytes_unchecked(&self.0)
         }
     }
 
-    /// Returns a `&mut TimeNumOffsetStr` for the string.
+    /// Returns a `&mut TimeNumOffsetColonStr` for the string.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use datetime_string::rfc3339::TimeNumOffsetString;
-    /// use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// let mut offset = "-12:34".parse::<TimeNumOffsetString>()?;
+    /// # use datetime_string::common::TimeNumOffsetColonString;
+    /// use datetime_string::common::TimeNumOffsetColonStr;
+    /// let mut offset = "-12:34".parse::<TimeNumOffsetColonString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
     /// // `DerefMut` trait is implemented.
-    /// let _: &mut TimeNumOffsetStr = offset.as_deref_mut();
+    /// let _: &mut TimeNumOffsetColonStr = offset.as_deref_mut();
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn as_deref_mut(&mut self) -> &mut TimeNumOffsetStr {
+    pub fn as_deref_mut(&mut self) -> &mut TimeNumOffsetColonStr {
         unsafe {
             // This is safe because `self.0` is valid time-numoffset string.
-            TimeNumOffsetStr::from_bytes_unchecked_mut(&mut self.0)
+            TimeNumOffsetColonStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
 }
 
-impl core::borrow::Borrow<TimeNumOffsetStr> for TimeNumOffsetString {
+impl core::borrow::Borrow<TimeNumOffsetColonStr> for TimeNumOffsetColonString {
     #[inline]
-    fn borrow(&self) -> &TimeNumOffsetStr {
+    fn borrow(&self) -> &TimeNumOffsetColonStr {
         self.as_deref()
     }
 }
 
-impl core::borrow::BorrowMut<TimeNumOffsetStr> for TimeNumOffsetString {
+impl core::borrow::BorrowMut<TimeNumOffsetColonStr> for TimeNumOffsetColonString {
     #[inline]
-    fn borrow_mut(&mut self) -> &mut TimeNumOffsetStr {
+    fn borrow_mut(&mut self) -> &mut TimeNumOffsetColonStr {
         self.as_deref_mut()
     }
 }
 
-impl AsRef<[u8]> for TimeNumOffsetString {
+impl AsRef<[u8]> for TimeNumOffsetColonString {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-impl AsRef<str> for TimeNumOffsetString {
+impl AsRef<str> for TimeNumOffsetColonString {
     #[inline]
     fn as_ref(&self) -> &str {
         self.as_str()
     }
 }
 
-impl AsRef<TimeNumOffsetStr> for TimeNumOffsetString {
+impl AsRef<TimeNumOffsetColonStr> for TimeNumOffsetColonString {
     #[inline]
-    fn as_ref(&self) -> &TimeNumOffsetStr {
+    fn as_ref(&self) -> &TimeNumOffsetColonStr {
         self
     }
 }
 
 #[cfg(feature = "alloc")]
-impl From<TimeNumOffsetString> for Vec<u8> {
+impl From<TimeNumOffsetColonString> for Vec<u8> {
     #[inline]
-    fn from(v: TimeNumOffsetString) -> Vec<u8> {
+    fn from(v: TimeNumOffsetColonString) -> Vec<u8> {
         (*v.as_bytes_fixed_len()).into()
     }
 }
 
 #[cfg(feature = "alloc")]
-impl From<TimeNumOffsetString> for String {
+impl From<TimeNumOffsetColonString> for String {
     #[inline]
-    fn from(v: TimeNumOffsetString) -> String {
+    fn from(v: TimeNumOffsetColonString) -> String {
         let vec: Vec<u8> = (*v.as_bytes_fixed_len()).into();
         unsafe {
             // This is safe because a valid time-numoffset string is also an ASCII string.
@@ -1077,8 +1083,8 @@ impl From<TimeNumOffsetString> for String {
     }
 }
 
-impl From<&TimeNumOffsetStr> for TimeNumOffsetString {
-    fn from(v: &TimeNumOffsetStr) -> Self {
+impl From<&TimeNumOffsetColonStr> for TimeNumOffsetColonString {
+    fn from(v: &TimeNumOffsetColonStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
             Self::new_unchecked(*v.as_bytes_fixed_len())
@@ -1086,25 +1092,25 @@ impl From<&TimeNumOffsetStr> for TimeNumOffsetString {
     }
 }
 
-impl TryFrom<&[u8]> for TimeNumOffsetString {
+impl TryFrom<&[u8]> for TimeNumOffsetColonString {
     type Error = Error;
 
     #[inline]
     fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
-        TimeNumOffsetStr::from_bytes(v).map(Into::into)
+        TimeNumOffsetColonStr::from_bytes(v).map(Into::into)
     }
 }
 
-impl TryFrom<&str> for TimeNumOffsetString {
+impl TryFrom<&str> for TimeNumOffsetColonString {
     type Error = Error;
 
     #[inline]
     fn try_from(v: &str) -> Result<Self, Self::Error> {
-        TimeNumOffsetStr::from_str(v).map(Into::into)
+        TimeNumOffsetColonStr::from_str(v).map(Into::into)
     }
 }
 
-impl TryFrom<[u8; 6]> for TimeNumOffsetString {
+impl TryFrom<[u8; 6]> for TimeNumOffsetColonString {
     type Error = Error;
 
     #[inline]
@@ -1117,15 +1123,15 @@ impl TryFrom<[u8; 6]> for TimeNumOffsetString {
     }
 }
 
-impl fmt::Display for TimeNumOffsetString {
+impl fmt::Display for TimeNumOffsetColonString {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.as_deref().fmt(f)
     }
 }
 
-impl ops::Deref for TimeNumOffsetString {
-    type Target = TimeNumOffsetStr;
+impl ops::Deref for TimeNumOffsetColonString {
+    type Target = TimeNumOffsetColonStr;
 
     #[inline]
     fn deref(&self) -> &Self::Target {
@@ -1133,14 +1139,14 @@ impl ops::Deref for TimeNumOffsetString {
     }
 }
 
-impl ops::DerefMut for TimeNumOffsetString {
+impl ops::DerefMut for TimeNumOffsetColonString {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_deref_mut()
     }
 }
 
-impl str::FromStr for TimeNumOffsetString {
+impl str::FromStr for TimeNumOffsetColonString {
     type Err = Error;
 
     #[inline]
@@ -1149,18 +1155,30 @@ impl str::FromStr for TimeNumOffsetString {
     }
 }
 
-impl_cmp_symmetric!(TimeNumOffsetStr, TimeNumOffsetString, &TimeNumOffsetString);
-impl_cmp_symmetric!(TimeNumOffsetStr, TimeNumOffsetString, TimeNumOffsetStr);
-impl_cmp_symmetric!(TimeNumOffsetStr, TimeNumOffsetString, &TimeNumOffsetStr);
-impl_cmp_symmetric!(str, TimeNumOffsetString, str);
-impl_cmp_symmetric!(str, TimeNumOffsetString, &str);
-impl_cmp_symmetric!(str, &TimeNumOffsetString, str);
-impl_cmp_symmetric!([u8], TimeNumOffsetString, [u8]);
-impl_cmp_symmetric!([u8], TimeNumOffsetString, &[u8]);
-impl_cmp_symmetric!([u8], &TimeNumOffsetString, [u8]);
+impl_cmp_symmetric!(
+    TimeNumOffsetColonStr,
+    TimeNumOffsetColonString,
+    &TimeNumOffsetColonString
+);
+impl_cmp_symmetric!(
+    TimeNumOffsetColonStr,
+    TimeNumOffsetColonString,
+    TimeNumOffsetColonStr
+);
+impl_cmp_symmetric!(
+    TimeNumOffsetColonStr,
+    TimeNumOffsetColonString,
+    &TimeNumOffsetColonStr
+);
+impl_cmp_symmetric!(str, TimeNumOffsetColonString, str);
+impl_cmp_symmetric!(str, TimeNumOffsetColonString, &str);
+impl_cmp_symmetric!(str, &TimeNumOffsetColonString, str);
+impl_cmp_symmetric!([u8], TimeNumOffsetColonString, [u8]);
+impl_cmp_symmetric!([u8], TimeNumOffsetColonString, &[u8]);
+impl_cmp_symmetric!([u8], &TimeNumOffsetColonString, [u8]);
 
 #[cfg(feature = "serde")]
-impl Serialize for TimeNumOffsetString {
+impl Serialize for TimeNumOffsetColonString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -1176,11 +1194,11 @@ mod serde_ {
 
     use serde::de::{Deserialize, Deserializer, Visitor};
 
-    /// Visitor for `&TimeNumOffsetStr`.
+    /// Visitor for `&TimeNumOffsetColonStr`.
     struct StrVisitor;
 
     impl<'de> Visitor<'de> for StrVisitor {
-        type Value = &'de TimeNumOffsetStr;
+        type Value = &'de TimeNumOffsetColonStr;
 
         #[inline]
         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1204,7 +1222,7 @@ mod serde_ {
         }
     }
 
-    impl<'de> Deserialize<'de> for &'de TimeNumOffsetStr {
+    impl<'de> Deserialize<'de> for &'de TimeNumOffsetColonStr {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1213,11 +1231,11 @@ mod serde_ {
         }
     }
 
-    /// Visitor for `TimeNumOffsetString`.
+    /// Visitor for `TimeNumOffsetColonString`.
     struct StringVisitor;
 
     impl<'de> Visitor<'de> for StringVisitor {
-        type Value = TimeNumOffsetString;
+        type Value = TimeNumOffsetColonString;
 
         #[inline]
         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1241,7 +1259,7 @@ mod serde_ {
         }
     }
 
-    impl<'de> Deserialize<'de> for TimeNumOffsetString {
+    impl<'de> Deserialize<'de> for TimeNumOffsetColonString {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1295,7 +1313,7 @@ mod tests {
     fn ser_de_str() {
         let raw: &'static str = "-12:34";
         assert_tokens(
-            &TimeNumOffsetStr::from_str(raw).unwrap(),
+            &TimeNumOffsetColonStr::from_str(raw).unwrap(),
             &[Token::BorrowedStr(raw)],
         );
     }
@@ -1305,7 +1323,7 @@ mod tests {
     fn ser_de_string() {
         let raw: &'static str = "-12:34";
         assert_tokens(
-            &TimeNumOffsetString::try_from(raw).unwrap(),
+            &TimeNumOffsetColonString::try_from(raw).unwrap(),
             &[Token::Str(raw)],
         );
     }
@@ -1315,7 +1333,7 @@ mod tests {
     fn de_bytes_slice() {
         let raw: &'static [u8; 6] = b"-12:34";
         assert_de_tokens(
-            &TimeNumOffsetStr::from_bytes(raw).unwrap(),
+            &TimeNumOffsetColonStr::from_bytes(raw).unwrap(),
             &[Token::BorrowedBytes(raw)],
         );
     }
@@ -1325,7 +1343,7 @@ mod tests {
     fn de_bytes() {
         let raw: &'static [u8; 6] = b"-12:34";
         assert_de_tokens(
-            &TimeNumOffsetString::try_from(&raw[..]).unwrap(),
+            &TimeNumOffsetColonString::try_from(&raw[..]).unwrap(),
             &[Token::Bytes(raw)],
         );
     }

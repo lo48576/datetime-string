@@ -4,18 +4,13 @@
 
 mod date_time;
 mod full_time;
-mod num_offset;
 mod offset;
 mod partial_time;
 mod secfrac;
 
 pub use self::{
-    date_time::DateTimeStr,
-    full_time::FullTimeStr,
-    num_offset::{TimeNumOffsetStr, TimeNumOffsetString},
-    offset::TimeOffsetStr,
-    partial_time::PartialTimeStr,
-    secfrac::SecfracStr,
+    date_time::DateTimeStr, full_time::FullTimeStr, offset::TimeOffsetStr,
+    partial_time::PartialTimeStr, secfrac::SecfracStr,
 };
 #[cfg(feature = "alloc")]
 pub use self::{
@@ -32,3 +27,13 @@ pub type FullDateStr = crate::common::Ymd8HyphenStr;
 ///
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
 pub type FullDateString = crate::common::Ymd8HyphenString;
+
+/// RFC 3339 [`time-numoffset`] string slice.
+///
+/// [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
+pub type TimeNumOffsetStr = crate::common::TimeNumOffsetColonStr;
+
+/// RFC 3339 [`time-numoffset`] owned string.
+///
+/// [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
+pub type TimeNumOffsetString = crate::common::TimeNumOffsetColonString;
