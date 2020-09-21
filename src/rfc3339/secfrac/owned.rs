@@ -16,7 +16,7 @@ use super::{validate_bytes, SecfracStr};
 
 /// Owned string for a time in RFC 3339 [`time-secfrac`] format, such as `.7890`.
 ///
-/// To create a value of this type, use [`<str>::parse()`] method or
+/// To create a value of this type, use [`str::parse`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&SecfracStr`.
 ///
 /// # Examples

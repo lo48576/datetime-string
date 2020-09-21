@@ -18,7 +18,7 @@ use super::{validate_bytes, PartialTimeStr};
 ///
 /// This is "partial", because it is not associated to a time offset.
 ///
-/// To create a value of this type, use [`<str>::parse()`] method or
+/// To create a value of this type, use [`str::parse`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&PartialTimeStr`.
 ///
 /// # Examples

@@ -942,7 +942,7 @@ impl_cmp_symmetric!(str, &TimeNumOffsetColonStr, str);
 ///
 /// This is a fixed length string, and implements [`Copy`] trait.
 ///
-/// To create a value of this type, use [`<str>::parse()`] method or
+/// To create a value of this type, use [`str::parse`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&TimeNumOffsetColonStr`.
 ///
 /// # Examples
