@@ -357,6 +357,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "-12:34".to_owned();
     /// let offset = TimeNumOffsetColonStr::from_mut_str(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
@@ -565,6 +566,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -601,6 +603,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -741,6 +744,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -779,6 +783,7 @@ impl TimeNumOffsetColonStr {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -988,6 +993,7 @@ impl TimeNumOffsetColonString {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonString;
     /// use datetime_string::common::TimeNumOffsetColonStr;
+    ///
     /// let offset = "-12:34".parse::<TimeNumOffsetColonString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -1011,6 +1017,7 @@ impl TimeNumOffsetColonString {
     /// ```
     /// # use datetime_string::common::TimeNumOffsetColonString;
     /// use datetime_string::common::TimeNumOffsetColonStr;
+    ///
     /// let mut offset = "-12:34".parse::<TimeNumOffsetColonString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

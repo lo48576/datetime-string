@@ -956,6 +956,7 @@ impl Ymd8HyphenString {
     /// ```
     /// # use datetime_string::common::Ymd8HyphenString;
     /// use datetime_string::common::Ymd8HyphenStr;
+    ///
     /// let date = "2001-12-31".parse::<Ymd8HyphenString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -979,6 +980,7 @@ impl Ymd8HyphenString {
     /// ```
     /// # use datetime_string::common::Ymd8HyphenString;
     /// use datetime_string::common::Ymd8HyphenStr;
+    ///
     /// let mut date = "2001-12-31".parse::<Ymd8HyphenString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

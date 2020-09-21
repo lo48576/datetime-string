@@ -78,6 +78,7 @@ impl SecfracString {
     /// ```
     /// # use datetime_string::rfc3339::SecfracString;
     /// use datetime_string::rfc3339::SecfracStr;
+    ///
     /// let secfrac = ".1234".parse::<SecfracString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -101,6 +102,7 @@ impl SecfracString {
     /// ```
     /// # use datetime_string::rfc3339::SecfracString;
     /// use datetime_string::rfc3339::SecfracStr;
+    ///
     /// let mut secfrac = ".1234".parse::<SecfracString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

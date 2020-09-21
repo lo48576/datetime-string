@@ -76,6 +76,7 @@ impl DateTimeString {
     /// ```
     /// # use datetime_string::rfc3339::DateTimeString;
     /// use datetime_string::rfc3339::DateTimeStr;
+    ///
     /// let datetime = "2001-06-17T12:34:56.7890-23:12".parse::<DateTimeString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -99,6 +100,7 @@ impl DateTimeString {
     /// ```
     /// # use datetime_string::rfc3339::DateTimeString;
     /// use datetime_string::rfc3339::DateTimeStr;
+    ///
     /// let mut datetime = "2001-06-17T12:34:56.7890-23:12".parse::<DateTimeString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

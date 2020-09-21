@@ -268,6 +268,7 @@ impl FullTimeStr {
     /// ```
     /// # use datetime_string::rfc3339::FullTimeStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "12:34:56.7890-23:12".to_owned();
     /// let time = FullTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
@@ -335,6 +336,7 @@ impl FullTimeStr {
     /// ```
     /// # use datetime_string::rfc3339::FullTimeStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "12:34:56.7890-23:12".to_owned();
     /// let time = FullTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");
@@ -394,6 +396,7 @@ impl FullTimeStr {
     /// ```
     /// # use datetime_string::rfc3339::FullTimeStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "12:34:56.7890-23:12".to_owned();
     /// let time = FullTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(time.as_str(), "12:34:56.7890-23:12");

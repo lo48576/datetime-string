@@ -109,7 +109,6 @@ impl SecfracStr {
     ///
     /// assert!(SecfracStr::from_str("0").is_err(), "A leading period is required");
     /// assert!(SecfracStr::from_str(".").is_err(), "One or more digits are required");
-    ///
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
@@ -155,7 +154,6 @@ impl SecfracStr {
     ///
     /// assert!(SecfracStr::from_bytes(b"0").is_err(), "A leading period is required");
     /// assert!(SecfracStr::from_bytes(b".").is_err(), "One or more digits are required");
-    ///
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]

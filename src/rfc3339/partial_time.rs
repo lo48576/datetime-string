@@ -119,7 +119,6 @@ impl PartialTimeStr {
     /// assert!(PartialTimeStr::from_str("12:34:56.").is_err());
     /// assert!(PartialTimeStr::from_str(".").is_err());
     /// assert!(PartialTimeStr::from_str("12:34.56").is_err());
-    ///
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
@@ -167,7 +166,6 @@ impl PartialTimeStr {
     /// assert!(PartialTimeStr::from_bytes(b"12:34:56.").is_err());
     /// assert!(PartialTimeStr::from_bytes(b".").is_err());
     /// assert!(PartialTimeStr::from_bytes(b"12:34.56").is_err());
-    ///
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]

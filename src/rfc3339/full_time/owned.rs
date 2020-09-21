@@ -75,6 +75,7 @@ impl FullTimeString {
     /// ```
     /// # use datetime_string::rfc3339::FullTimeString;
     /// use datetime_string::rfc3339::FullTimeStr;
+    ///
     /// let time = "12:34:56.7890-23:12".parse::<FullTimeString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -98,6 +99,7 @@ impl FullTimeString {
     /// ```
     /// # use datetime_string::rfc3339::FullTimeString;
     /// use datetime_string::rfc3339::FullTimeStr;
+    ///
     /// let mut time = "12:34:56.7890-23:12".parse::<FullTimeString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because

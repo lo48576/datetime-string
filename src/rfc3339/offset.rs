@@ -135,6 +135,7 @@ impl TimeOffsetStr {
     /// ```
     /// # use datetime_string::rfc3339::TimeOffsetStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf = "-12:34".to_owned();
     /// let offset = TimeOffsetStr::from_mut_str(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
@@ -185,6 +186,7 @@ impl TimeOffsetStr {
     /// ```
     /// # use datetime_string::rfc3339::TimeOffsetStr;
     /// use datetime_string::common::TimeOffsetSign;
+    ///
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let offset = TimeOffsetStr::from_bytes_mut(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");

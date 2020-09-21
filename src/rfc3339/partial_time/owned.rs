@@ -80,6 +80,7 @@ impl PartialTimeString {
     /// ```
     /// # use datetime_string::rfc3339::PartialTimeString;
     /// use datetime_string::rfc3339::PartialTimeStr;
+    ///
     /// let time = "12:34:56.7890".parse::<PartialTimeString>()?;
     ///
     /// // Usually you don't need to call `as_deref()` explicitly, because
@@ -103,6 +104,7 @@ impl PartialTimeString {
     /// ```
     /// # use datetime_string::rfc3339::PartialTimeString;
     /// use datetime_string::rfc3339::PartialTimeStr;
+    ///
     /// let mut time = "12:34:56.7890".parse::<PartialTimeString>()?;
     ///
     /// // Usually you don't need to call `as_deref_mut()` explicitly, because
