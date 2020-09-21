@@ -247,6 +247,35 @@ impl SecfracDigitsStr {
         })
     }
 
+    /// Returns a milliseconds precision substring if there are enough digits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::SecfracDigitsStr;
+    /// let mut buf = "012345678901".to_owned();
+    /// let digits = SecfracDigitsStr::from_mut_str(&mut buf)?;
+    /// assert_eq!(digits.as_str(), "012345678901");
+    ///
+    /// digits.milliseconds_digits_mut().unwrap().fill_with_zero();
+    /// assert_eq!(digits.as_str(), "000345678901");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn milliseconds_digits_mut(&mut self) -> Option<&mut SecfracDigitsStr> {
+        unsafe {
+            // This is safe because `SecfracDigitsStr` ensures that the string
+            // after modification contains only ASCII digits.
+            let bytes = self.0.as_bytes_mut();
+            bytes.get_mut(MILLI_RANGE).map(|s| {
+                debug_assert!(validate_bytes(s).is_ok());
+                // This is safe because the string consists of only ASCII digits.
+                SecfracDigitsStr::from_bytes_unchecked_mut(s)
+            })
+        }
+    }
+
     /// Returns a milliseconds digits as a fixed bytes slice, if there are enough digits.
     ///
     /// # Examples
@@ -302,6 +331,35 @@ impl SecfracDigitsStr {
         })
     }
 
+    /// Returns a microseconds precision substring if there are enough digits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::SecfracDigitsStr;
+    /// let mut buf = "012345678901".to_owned();
+    /// let digits = SecfracDigitsStr::from_mut_str(&mut buf)?;
+    /// assert_eq!(digits.as_str(), "012345678901");
+    ///
+    /// digits.microseconds_digits_mut().unwrap().fill_with_zero();
+    /// assert_eq!(digits.as_str(), "000000678901");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn microseconds_digits_mut(&mut self) -> Option<&mut SecfracDigitsStr> {
+        unsafe {
+            // This is safe because `SecfracDigitsStr` ensures that the string
+            // after modification contains only ASCII digits.
+            let bytes = self.0.as_bytes_mut();
+            bytes.get_mut(MICRO_RANGE).map(|s| {
+                debug_assert!(validate_bytes(s).is_ok());
+                // This is safe because the string consists of only ASCII digits.
+                SecfracDigitsStr::from_bytes_unchecked_mut(s)
+            })
+        }
+    }
+
     /// Returns a microseconds digits as a fixed bytes slice, if there are enough digits.
     ///
     /// # Examples
@@ -355,6 +413,35 @@ impl SecfracDigitsStr {
             // This is safe because the string consists of only ASCII digits.
             SecfracDigitsStr::from_bytes_unchecked(s)
         })
+    }
+
+    /// Returns a nanoseconds precision substring if there are enough digits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::SecfracDigitsStr;
+    /// let mut buf = "012345678901".to_owned();
+    /// let digits = SecfracDigitsStr::from_mut_str(&mut buf)?;
+    /// assert_eq!(digits.as_str(), "012345678901");
+    ///
+    /// digits.nanoseconds_digits_mut().unwrap().fill_with_zero();
+    /// assert_eq!(digits.as_str(), "000000000901");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn nanoseconds_digits_mut(&mut self) -> Option<&mut SecfracDigitsStr> {
+        unsafe {
+            // This is safe because `SecfracDigitsStr` ensures that the string
+            // after modification contains only ASCII digits.
+            let bytes = self.0.as_bytes_mut();
+            bytes.get_mut(NANO_RANGE).map(|s| {
+                debug_assert!(validate_bytes(s).is_ok());
+                // This is safe because the string consists of only ASCII digits.
+                SecfracDigitsStr::from_bytes_unchecked_mut(s)
+            })
+        }
     }
 
     /// Returns a nanoseconds digits as a fixed bytes slice, if there are enough digits.
