@@ -10,7 +10,10 @@ use core::{convert::TryFrom, fmt, ops, str};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::error::{ComponentKind, Error, ErrorKind};
+use crate::{
+    common::SecfracDigitsStr,
+    error::{ComponentKind, Error, ErrorKind},
+};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::SecfracString;
@@ -222,17 +225,22 @@ impl SecfracStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::SecfracStr;
+    /// use datetime_string::common::SecfracDigitsStr;
+    ///
     /// let secfrac = SecfracStr::from_str(".1234")?;
-    /// assert_eq!(secfrac.digits(), "1234");
+    /// assert_eq!(secfrac.digits().as_str(), "1234");
     ///
     /// let secfrac2 = SecfracStr::from_str(".012340")?;
-    /// assert_eq!(secfrac2.digits(), "012340");
+    /// assert_eq!(secfrac2.digits().as_str(), "012340");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
     #[inline]
     #[must_use]
-    pub fn digits(&self) -> &str {
-        &self.0[1..]
+    pub fn digits(&self) -> &SecfracDigitsStr {
+        unsafe {
+            // This is safe because the digits part contains only ASCII digits.
+            SecfracDigitsStr::from_bytes_unchecked(self.0.as_bytes().get_unchecked(1..))
+        }
     }
 
     /// Returns a milliseconds precision secfrac if there are enough digits.
