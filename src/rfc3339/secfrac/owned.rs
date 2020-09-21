@@ -90,7 +90,7 @@ impl SecfracString {
     #[must_use]
     pub fn as_deref(&self) -> &SecfracStr {
         unsafe {
-            // This is safe because `self.0` is valid `hh:mm:ss` string.
+            // This is safe because `self.0` should be already validated.
             SecfracStr::from_str_unchecked(&self.0)
         }
     }
@@ -114,7 +114,7 @@ impl SecfracString {
     #[must_use]
     pub fn as_deref_mut(&mut self) -> &mut SecfracStr {
         unsafe {
-            // This is safe because `self.0` is valid `hh:mm:ss` string.
+            // This is safe because `self.0` should be already validated.
             SecfracStr::from_str_unchecked_mut(&mut self.0)
         }
     }
