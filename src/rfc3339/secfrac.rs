@@ -5,7 +5,12 @@
 #[cfg(feature = "alloc")]
 mod owned;
 
-use core::{convert::TryFrom, fmt, ops, str};
+use core::{
+    convert::TryFrom,
+    fmt,
+    ops::{self, RangeFrom},
+    str,
+};
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -17,6 +22,9 @@ use crate::{
 
 #[cfg(feature = "alloc")]
 pub use self::owned::SecfracString;
+
+/// Range of digits.
+const DIGITS_RANGE: RangeFrom<usize> = 1..;
 
 /// Validates the given string as an RFC 3339 [`time-secfrac`] string.
 ///
@@ -30,7 +38,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
         return Err(ErrorKind::InvalidSeparator.into());
     }
 
-    let secfrac_s = &s[1..];
+    let secfrac_s = &s[DIGITS_RANGE];
     if !secfrac_s.iter().all(u8::is_ascii_digit) {
         return Err(ErrorKind::InvalidComponentType(ComponentKind::Secfrac).into());
     }
@@ -239,7 +247,7 @@ impl SecfracStr {
     pub fn digits(&self) -> &SecfracDigitsStr {
         unsafe {
             // This is safe because the digits part contains only ASCII digits.
-            SecfracDigitsStr::from_bytes_unchecked(self.0.as_bytes().get_unchecked(1..))
+            SecfracDigitsStr::from_bytes_unchecked(self.0.as_bytes().get_unchecked(DIGITS_RANGE))
         }
     }
 
