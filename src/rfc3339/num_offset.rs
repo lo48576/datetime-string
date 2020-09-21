@@ -18,7 +18,9 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use super::{ComponentKind, ErrorKind, TimeOffsetSign, ValidationError};
+use crate::common::TimeOffsetSign;
+
+use super::{ComponentKind, ErrorKind, ValidationError};
 
 /// Length of time-numoffset (e.g. "+12:34").
 const NUM_OFFSET_LEN: usize = 6;
@@ -166,7 +168,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf = "-12:34".to_owned();
     /// let offset = TimeNumOffsetStr::from_mut_str(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
@@ -214,7 +216,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let offset = TimeNumOffsetStr::from_bytes_mut(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
@@ -298,7 +300,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     ///
     /// let positive = TimeNumOffsetStr::from_str("+12:34")?;
     /// assert_eq!(positive.sign(), TimeOffsetSign::Positive);
@@ -312,7 +314,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     ///
     /// let positive0 = TimeNumOffsetStr::from_str("+00:00")?;
     /// assert_eq!(positive0.sign(), TimeOffsetSign::Positive);
@@ -350,7 +352,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf = "-12:34".to_owned();
     /// let offset = TimeNumOffsetStr::from_mut_str(&mut buf)?;
     /// assert_eq!(offset.as_str(), "-12:34");
@@ -558,7 +560,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -594,7 +596,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -734,7 +736,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");
@@ -772,7 +774,7 @@ impl TimeNumOffsetStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::TimeNumOffsetStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf: [u8; 6] = *b"-12:34";
     /// let time = TimeNumOffsetStr::from_bytes_mut(&mut buf[..])?;
     /// assert_eq!(time.as_str(), "-12:34");

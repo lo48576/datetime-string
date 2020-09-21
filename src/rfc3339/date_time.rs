@@ -267,7 +267,7 @@ impl DateTimeStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::DateTimeStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf = "2001-06-17T12:34:56.7890-23:12".to_owned();
     /// let datetime = DateTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(datetime.as_str(), "2001-06-17T12:34:56.7890-23:12");
@@ -384,7 +384,7 @@ impl DateTimeStr {
     ///
     /// ```
     /// # use datetime_string::rfc3339::DateTimeStr;
-    /// use datetime_string::rfc3339::TimeOffsetSign;
+    /// use datetime_string::common::TimeOffsetSign;
     /// let mut buf = "2001-06-17T12:34:56.7890-23:12".to_owned();
     /// let datetime = DateTimeStr::from_mut_str(&mut buf)?;
     /// assert_eq!(datetime.as_str(), "2001-06-17T12:34:56.7890-23:12");
