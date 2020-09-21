@@ -2,6 +2,9 @@
 //!
 //! [`full-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
+#[cfg(feature = "alloc")]
+mod owned;
+
 use core::{convert::TryFrom, fmt, ops, str};
 
 #[cfg(feature = "serde")]
@@ -13,9 +16,6 @@ use super::{PartialTimeStr, TimeNumOffsetStr, TimeOffsetStr};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::FullTimeString;
-
-#[cfg(feature = "alloc")]
-mod owned;
 
 /// Validates the given string as an RFC 3339 [`full-time`].
 ///

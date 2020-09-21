@@ -2,6 +2,9 @@
 //!
 //! [`date-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
+#[cfg(feature = "alloc")]
+mod owned;
+
 use core::{
     convert::TryFrom,
     fmt,
@@ -18,9 +21,6 @@ use super::{FullDateStr, FullTimeStr};
 
 #[cfg(feature = "alloc")]
 pub use self::owned::DateTimeString;
-
-#[cfg(feature = "alloc")]
-mod owned;
 
 /// Minimum length of the `date-time` string.
 ///

@@ -2,6 +2,9 @@
 //!
 //! [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
+#[cfg(feature = "alloc")]
+mod owned;
+
 use core::{cmp::Ordering, convert::TryFrom, fmt, ops, str};
 
 #[cfg(feature = "serde")]
@@ -15,9 +18,6 @@ use crate::{
 
 #[cfg(feature = "alloc")]
 pub use self::owned::PartialTimeString;
-
-#[cfg(feature = "alloc")]
-mod owned;
 
 /// Minimum length of `partial-time` string (i.e. length of `hh:mm:ss`).
 const PARTIAL_TIME_LEN_MIN: usize = 8;

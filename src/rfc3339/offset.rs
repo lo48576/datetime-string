@@ -2,6 +2,9 @@
 //!
 //! [`time-offset`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
+#[cfg(feature = "alloc")]
+mod owned;
+
 use core::{cmp::Ordering, convert::TryFrom, fmt, ops, str};
 
 #[cfg(feature = "serde")]
@@ -16,9 +19,6 @@ use super::TimeNumOffsetStr;
 
 #[cfg(feature = "alloc")]
 pub use self::owned::TimeOffsetString;
-
-#[cfg(feature = "alloc")]
-mod owned;
 
 /// Validates the given string as an RFC 3339 [`time-offset`].
 ///
