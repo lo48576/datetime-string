@@ -251,6 +251,37 @@ impl SecfracStr {
         }
     }
 
+    /// Returns the digits as a mutable reference.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::SecfracStr;
+    /// use datetime_string::common::SecfracDigitsStr;
+    ///
+    /// let mut buf = ".1234".to_owned();
+    /// let secfrac = SecfracStr::from_mut_str(&mut buf)?;
+    /// let digits = secfrac.digits_mut();
+    /// assert_eq!(digits.as_str(), "1234");
+    ///
+    /// digits.fill_with_zero();
+    /// assert_eq!(digits.as_str(), "0000");
+    /// assert_eq!(secfrac.as_str(), ".0000");
+    /// assert_eq!(buf, ".0000");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn digits_mut(&mut self) -> &mut SecfracDigitsStr {
+        unsafe {
+            // This is safe because `SecfracDigitsStr` can contain only ASCII digits.
+            // This means the underlying bytes of `self.0` is always an ASCII string.
+            let bytes = self.0.as_bytes_mut();
+            // This is safe because the digits part contains only ASCII digits.
+            SecfracDigitsStr::from_bytes_unchecked_mut(bytes.get_unchecked_mut(DIGITS_RANGE))
+        }
+    }
+
     /// Returns a milliseconds precision secfrac if there are enough digits.
     ///
     /// # Examples
