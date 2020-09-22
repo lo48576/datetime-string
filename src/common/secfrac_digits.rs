@@ -11,9 +11,6 @@ use core::{
     str,
 };
 
-#[cfg(feature = "serde")]
-use serde::Serialize;
-
 use crate::{
     error::{ComponentKind, Error, ErrorKind},
     parse::parse_digits8,
@@ -49,14 +46,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
 /// Note that values of this type cannot be not empty string.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct SecfracDigitsStr(str);
+pub struct SecfracDigitsStr([u8]);
 
 impl SecfracDigitsStr {
     /// Creates a `&SecfracDigitsStr` from the given byte slice.
@@ -67,7 +65,7 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
-        Self::from_str_unchecked(str::from_utf8_unchecked(s))
+        &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut SecfracDigitsStr` from the given mutable byte slice.
@@ -78,18 +76,7 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
-        Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
-    }
-
-    /// Creates a `&SecfracDigitsStr` from the given string slice.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const SecfracDigitsStr)
+        &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut SecfracDigitsStr` from the given mutable string slice.
@@ -100,7 +87,9 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut SecfracDigitsStr)
+        // This is safe because `SecfracDigitsStr` ensures that the underlying
+        // bytes are ASCII string after modification.
+        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&SecfracDigitsStr` from a string slice.
@@ -205,7 +194,11 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        unsafe {
+            // This is safe because the `SecfracDigitsStr` ensures that the
+            // underlying bytes are ASCII string.
+            str::from_utf8_unchecked(&self.0)
+        }
     }
 
     /// Returns a byte slice.
@@ -222,7 +215,7 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+        &self.0
     }
 
     /// Retruns a milliseconds value in integer.
@@ -244,7 +237,7 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn milliseconds(&self) -> u16 {
-        let bytes = self.0.as_bytes();
+        let bytes = &self.0;
         match self.len() {
             1 => (bytes[0] - b'0') as u16 * 100,
             2 => (bytes[0] - b'0') as u16 * 100 + (bytes[1] - b'0') as u16 * 10,
@@ -276,9 +269,10 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn milliseconds_digits(&self) -> Option<&SecfracDigitsStr> {
-        self.0.as_bytes().get(MILLI_RANGE).map(|s| unsafe {
+        self.0.get(MILLI_RANGE).map(|s| unsafe {
             debug_assert!(validate_bytes(s).is_ok());
-            // This is safe because the string consists of only ASCII digits.
+            // This is safe because `self.0` consists of only ASCII digits,
+            // and so is the substring.
             SecfracDigitsStr::from_bytes_unchecked(s)
         })
     }
@@ -300,16 +294,14 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn milliseconds_digits_mut(&mut self) -> Option<&mut SecfracDigitsStr> {
-        unsafe {
-            // This is safe because `SecfracDigitsStr` ensures that the string
-            // after modification contains only ASCII digits.
-            let bytes = self.0.as_bytes_mut();
-            bytes.get_mut(MILLI_RANGE).map(|s| {
-                debug_assert!(validate_bytes(s).is_ok());
-                // This is safe because the string consists of only ASCII digits.
+        self.0.get_mut(MILLI_RANGE).map(|s| {
+            debug_assert!(validate_bytes(s).is_ok());
+            unsafe {
+                // This is safe because `self.0` consists of only ASCII digits,
+                // and so is the substring.
                 SecfracDigitsStr::from_bytes_unchecked_mut(s)
-            })
-        }
+            }
+        })
     }
 
     /// Returns a milliseconds digits as a fixed bytes slice, if there are enough digits.
@@ -331,7 +323,7 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn milliseconds_bytes_fixed_len(&self) -> Option<&[u8; 3]> {
-        self.0.as_bytes().get(MILLI_RANGE).map(|s| {
+        self.0.get(MILLI_RANGE).map(|s| {
             debug_assert_eq!(s.len(), 3);
             let ptr = s.as_ptr() as *const [u8; 3];
             unsafe {
@@ -360,7 +352,7 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn microseconds(&self) -> u32 {
-        let bytes = self.0.as_bytes();
+        let bytes = &self.0;
         let len = bytes.len();
         let len6 = cmp::min(6, len);
 
@@ -389,9 +381,10 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn microseconds_digits(&self) -> Option<&SecfracDigitsStr> {
-        self.0.as_bytes().get(MICRO_RANGE).map(|s| unsafe {
+        self.0.get(MICRO_RANGE).map(|s| unsafe {
             debug_assert!(validate_bytes(s).is_ok());
-            // This is safe because the string consists of only ASCII digits.
+            // This is safe because `self.0` consists of only ASCII digits,
+            // and so is the substring.
             SecfracDigitsStr::from_bytes_unchecked(s)
         })
     }
@@ -413,16 +406,14 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn microseconds_digits_mut(&mut self) -> Option<&mut SecfracDigitsStr> {
-        unsafe {
-            // This is safe because `SecfracDigitsStr` ensures that the string
-            // after modification contains only ASCII digits.
-            let bytes = self.0.as_bytes_mut();
-            bytes.get_mut(MICRO_RANGE).map(|s| {
-                debug_assert!(validate_bytes(s).is_ok());
-                // This is safe because the string consists of only ASCII digits.
+        self.0.get_mut(MICRO_RANGE).map(|s| {
+            debug_assert!(validate_bytes(s).is_ok());
+            unsafe {
+                // This is safe because `self.0` consists of only ASCII digits,
+                // and so is the substring.
                 SecfracDigitsStr::from_bytes_unchecked_mut(s)
-            })
-        }
+            }
+        })
     }
 
     /// Returns a microseconds digits as a fixed bytes slice, if there are enough digits.
@@ -444,7 +435,7 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn microseconds_bytes_fixed_len(&self) -> Option<&[u8; 6]> {
-        self.0.as_bytes().get(MICRO_RANGE).map(|s| {
+        self.0.get(MICRO_RANGE).map(|s| {
             debug_assert_eq!(s.len(), 6);
             let ptr = s.as_ptr() as *const [u8; 6];
             unsafe {
@@ -473,7 +464,7 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn nanoseconds(&self) -> u32 {
-        let bytes = self.0.as_bytes();
+        let bytes = &self.0;
         let len = bytes.len();
         let len8 = cmp::min(8, len);
 
@@ -506,9 +497,10 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn nanoseconds_digits(&self) -> Option<&SecfracDigitsStr> {
-        self.0.as_bytes().get(NANO_RANGE).map(|s| unsafe {
+        self.0.get(NANO_RANGE).map(|s| unsafe {
             debug_assert!(validate_bytes(s).is_ok());
-            // This is safe because the string consists of only ASCII digits.
+            // This is safe because `self.0` consists of only ASCII digits,
+            // and so is the substring.
             SecfracDigitsStr::from_bytes_unchecked(s)
         })
     }
@@ -530,16 +522,14 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn nanoseconds_digits_mut(&mut self) -> Option<&mut SecfracDigitsStr> {
-        unsafe {
-            // This is safe because `SecfracDigitsStr` ensures that the string
-            // after modification contains only ASCII digits.
-            let bytes = self.0.as_bytes_mut();
-            bytes.get_mut(NANO_RANGE).map(|s| {
-                debug_assert!(validate_bytes(s).is_ok());
-                // This is safe because the string consists of only ASCII digits.
+        self.0.get_mut(NANO_RANGE).map(|s| {
+            debug_assert!(validate_bytes(s).is_ok());
+            unsafe {
+                // This is safe because `self.0` consists of only ASCII digits,
+                // and so is the substring.
                 SecfracDigitsStr::from_bytes_unchecked_mut(s)
-            })
-        }
+            }
+        })
     }
 
     /// Returns a nanoseconds digits as a fixed bytes slice, if there are enough digits.
@@ -561,11 +551,11 @@ impl SecfracDigitsStr {
     #[inline]
     #[must_use]
     pub fn nanoseconds_bytes_fixed_len(&self) -> Option<&[u8; 9]> {
-        self.0.as_bytes().get(NANO_RANGE).map(|s| {
+        self.0.get(NANO_RANGE).map(|s| {
             debug_assert_eq!(s.len(), 9);
             let ptr = s.as_ptr() as *const [u8; 9];
             unsafe {
-                // This is always safe because the string is valid `time-secfrac` string.
+                // This is safe because the string consists of only ASCII digits.
                 &*ptr
             }
         })
@@ -591,17 +581,9 @@ impl SecfracDigitsStr {
     pub fn fill_with_zero(&mut self) {
         // Use `slice::fill()` once rust-lang/rust#70758 is stabilized.
         // See <https://github.com/rust-lang/rust/issues/70758>.
-        unsafe {
-            // This is safe because the value after the modification is
-            // "000...00", and it is of course a valid string because it
-            // consists of only ASCII digits.
-            self.0
-                .as_bytes_mut()
-                .iter_mut()
-                .for_each(|digit| *digit = b'0');
-        }
+        self.0.iter_mut().for_each(|digit| *digit = b'0');
         debug_assert!(
-            validate_bytes(self.as_bytes()).is_ok(),
+            validate_bytes(&self.0).is_ok(),
             "The secfrac digits string must be valid after the modification"
         );
     }
@@ -626,17 +608,9 @@ impl SecfracDigitsStr {
     pub fn fill_with_nine(&mut self) {
         // Use `slice::fill()` once rust-lang/rust#70758 is stabilized.
         // See <https://github.com/rust-lang/rust/issues/70758>.
-        unsafe {
-            // This is safe because the value after the modification is
-            // "999...99", and it is of course a valid string because it
-            // consists of only ASCII digits.
-            self.0
-                .as_bytes_mut()
-                .iter_mut()
-                .for_each(|digit| *digit = b'9');
-        }
+        self.0.iter_mut().for_each(|digit| *digit = b'9');
         debug_assert!(
-            validate_bytes(self.as_bytes()).is_ok(),
+            validate_bytes(&self.0).is_ok(),
             "The secfrac digits string must be valid after the modification"
         );
     }
@@ -655,7 +629,7 @@ impl alloc::borrow::ToOwned for SecfracDigitsStr {
 impl AsRef<[u8]> for SecfracDigitsStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        self.as_bytes()
+        &self.0
     }
 }
 
@@ -711,11 +685,7 @@ impl<'a> TryFrom<&'a str> for &'a SecfracDigitsStr {
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
-        validate_bytes(v.as_bytes())?;
-        Ok(unsafe {
-            // This is safe because the string is already validated.
-            SecfracDigitsStr::from_str_unchecked(v)
-        })
+        Self::try_from(v.as_bytes())
     }
 }
 
@@ -726,7 +696,9 @@ impl<'a> TryFrom<&'a mut str> for &'a mut SecfracDigitsStr {
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
-            // This is safe because the string is already validated.
+            // This is safe because the string is already validated and
+            // `SecfracDigitsStr` ensures that the underlying bytes are ASCII
+            // string after modification.
             SecfracDigitsStr::from_str_unchecked_mut(v)
         })
     }
@@ -735,7 +707,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut SecfracDigitsStr {
 impl fmt::Display for SecfracDigitsStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.as_str().fmt(f)
     }
 }
 
@@ -744,7 +716,7 @@ impl ops::Deref for SecfracDigitsStr {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.as_str()
     }
 }
 
@@ -755,6 +727,16 @@ impl_cmp_symmetric!([u8], &SecfracDigitsStr, [u8]);
 impl_cmp_symmetric!(str, SecfracDigitsStr, str);
 impl_cmp_symmetric!(str, SecfracDigitsStr, &str);
 impl_cmp_symmetric!(str, &SecfracDigitsStr, str);
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for SecfracDigitsStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Items for serde support.
 #[cfg(feature = "serde")]
