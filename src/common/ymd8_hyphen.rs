@@ -21,9 +21,6 @@ use crate::{
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
 
-#[cfg(feature = "serde")]
-use serde::Serialize;
-
 use crate::error::{ComponentKind, Error, ErrorKind};
 
 /// Length of RFC 3339 `full-date` string (i.e. length of `YYYY-MM-DD`).
@@ -85,14 +82,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct Ymd8HyphenStr(str);
+pub struct Ymd8HyphenStr([u8]);
 
 impl Ymd8HyphenStr {
     /// Creates a `&Ymd8HyphenStr` from the given byte slice.
@@ -103,7 +101,7 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
-        Self::from_str_unchecked(str::from_utf8_unchecked(s))
+        &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut Ymd8HyphenStr` from the given mutable byte slice.
@@ -114,18 +112,7 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
-        Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
-    }
-
-    /// Creates a `&Ymd8HyphenStr` from the given string slice.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const Ymd8HyphenStr)
+        &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut Ymd8HyphenStr` from the given mutable string slice.
@@ -136,7 +123,9 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut Ymd8HyphenStr)
+        // This is safe because `Hms6ColonStr` ensures that the underlying bytes
+        // are ASCII string after modification.
+        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&Ymd8HyphenStr` from a string slice.
@@ -241,7 +230,11 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        unsafe {
+            // This is safe because the `Ymd8HyphenStr` ensures that the
+            // underlying bytes are ASCII string.
+            str::from_utf8_unchecked(&self.0)
+        }
     }
 
     /// Returns a byte slice.
@@ -262,7 +255,7 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+        &self.0
     }
 
     /// Returns a fixed length byte slice.
@@ -305,7 +298,11 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn year_str(&self) -> &str {
-        &self.0[YEAR_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and `YEAR_RANGE`
+            // is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(YEAR_RANGE))
+        }
     }
 
     /// Returns the year as a fixed length byte slice.
@@ -323,11 +320,11 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn year_bytes_fixed_len(&self) -> &[u8; 4] {
-        // Using `self.0` instead of `self.0[YEAR_RANGE]` because
-        // `.as_ptr()` returns the same address.
-        let ptr = self.0.as_ptr() as *const [u8; 4];
-        // This must be always safe because the string is valid RFC 3339 `full-date` string.
-        unsafe { &*ptr }
+        unsafe {
+            // This is safe because `YEAR_RANGE` fits inside the string.
+            let ptr = self.0.as_ptr().add(YEAR_RANGE.start) as *const [u8; 4];
+            &*ptr
+        }
     }
 
     /// Returns the year as a fixed length mutable byte slice.
@@ -339,10 +336,8 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     unsafe fn year_bytes_mut_fixed_len(&mut self) -> &mut [u8; 4] {
-        // Using `self.0` instead of `self.0[YEAR_RANGE]` because
-        // `.as_ptr()` returns the same address.
-        let ptr = self.0.as_mut_ptr() as *mut [u8; 4];
-        // This must be always safe because the string is valid RFC 3339 `full-date` string.
+        // This is safe because `YEAR_RANGE` fits inside the string.
+        let ptr = self.0.as_mut_ptr().add(YEAR_RANGE.start) as *mut [u8; 4];
         &mut *ptr
     }
 
@@ -377,7 +372,11 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn month_str(&self) -> &str {
-        &self.0[MONTH_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and `MONTH_RANGE`
+            // is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(MONTH_RANGE))
+        }
     }
 
     /// Returns the month as a fixed length byte slice.
@@ -395,9 +394,11 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn month_bytes_fixed_len(&self) -> &[u8; 2] {
-        let ptr = self.0[MONTH_RANGE].as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid RFC 3339 `full-date` string.
-        unsafe { &*ptr }
+        unsafe {
+            // This is safe because `MONTH_RANGE` fits inside the string.
+            let ptr = self.0.as_ptr().add(MONTH_RANGE.start) as *const [u8; 2];
+            &*ptr
+        }
     }
 
     /// Returns the month as a fixed length mutable byte slice.
@@ -409,8 +410,8 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     unsafe fn month_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
-        let ptr = self.0[MONTH_RANGE].as_mut_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid RFC 3339 `full-date` string.
+        // This is safe because `MONTH_RANGE` fits inside the string.
+        let ptr = self.0.as_mut_ptr().add(MONTH_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
 
@@ -462,7 +463,11 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn mday_str(&self) -> &str {
-        &self.0[MDAY_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and `MDAY_RANGE`
+            // is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(MDAY_RANGE))
+        }
     }
 
     /// Returns the day of month as a fixed length byte slice.
@@ -480,9 +485,11 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn mday_bytes_fixed_len(&self) -> &[u8; 2] {
-        let ptr = self.0[MDAY_RANGE].as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid RFC 3339 `full-date` string.
-        unsafe { &*ptr }
+        unsafe {
+            // This is safe because `MDAY_RANGE` fits inside the string.
+            let ptr = self.0.as_ptr().add(MDAY_RANGE.start) as *const [u8; 2];
+            &*ptr
+        }
     }
 
     /// Returns the day of month as a fixed length mutable byte slice.
@@ -494,8 +501,8 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     unsafe fn mday_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
-        let ptr = self.0[MDAY_RANGE].as_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid RFC 3339 `full-date` string.
+        // This is safe because `MDAY_RANGE` fits inside the string.
+        let ptr = self.0.as_mut_ptr().add(MDAY_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
 
@@ -854,11 +861,7 @@ impl<'a> TryFrom<&'a str> for &'a Ymd8HyphenStr {
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
-        validate_bytes(v.as_bytes())?;
-        Ok(unsafe {
-            // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
-            Ymd8HyphenStr::from_str_unchecked(v)
-        })
+        TryFrom::try_from(v.as_bytes())
     }
 }
 
@@ -869,7 +872,8 @@ impl<'a> TryFrom<&'a mut str> for &'a mut Ymd8HyphenStr {
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
-            // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
+            // This is safe because the value is successfully validated, and
+            // `Ymd8HyphenStr` ensures the value after modification is an ASCII string.
             Ymd8HyphenStr::from_str_unchecked_mut(v)
         })
     }
@@ -878,7 +882,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut Ymd8HyphenStr {
 impl fmt::Display for Ymd8HyphenStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.as_str().fmt(f)
     }
 }
 
@@ -887,7 +891,7 @@ impl ops::Deref for Ymd8HyphenStr {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.as_str()
     }
 }
 
@@ -898,6 +902,16 @@ impl_cmp_symmetric!([u8], &Ymd8HyphenStr, [u8]);
 impl_cmp_symmetric!(str, Ymd8HyphenStr, str);
 impl_cmp_symmetric!(str, Ymd8HyphenStr, &str);
 impl_cmp_symmetric!(str, &Ymd8HyphenStr, str);
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Ymd8HyphenStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Owned string for a date in `YYYY-MM-DD` format, such as `2001-12-31`.
 ///
@@ -1136,7 +1150,7 @@ impl_cmp_symmetric!([u8], Ymd8HyphenString, &[u8]);
 impl_cmp_symmetric!([u8], &Ymd8HyphenString, [u8]);
 
 #[cfg(feature = "serde")]
-impl Serialize for Ymd8HyphenString {
+impl serde::Serialize for Ymd8HyphenString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
