@@ -12,7 +12,7 @@ use core::{
     str,
 };
 
-use crate::{parse::parse_bcd2, str::write_digit2};
+use crate::{parse::parse_digits2, str::write_digit2};
 
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
@@ -77,15 +77,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
         return Err(ErrorKind::InvalidComponentType(ComponentKind::Second).into());
     }
 
-    let hour = parse_bcd2(hour_s);
+    let hour = parse_digits2(hour_s);
     if hour > HOUR_MAX {
         return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Hour).into());
     }
-    let minute = parse_bcd2(minute_s);
+    let minute = parse_digits2(minute_s);
     if minute > MINUTE_MAX {
         return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Minute).into());
     }
-    let second = parse_bcd2(second_s);
+    let second = parse_digits2(second_s);
     // Leap second is always allowed for this type. See the documentation for the types.
     if second > SECOND_MAX {
         return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Minute).into());
@@ -374,7 +374,7 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn hour(&self) -> u8 {
-        parse_bcd2(*self.hour_bytes_fixed_len())
+        parse_digits2(*self.hour_bytes_fixed_len())
     }
 
     /// Returns the minute as a string slice.
@@ -442,7 +442,7 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn minute(&self) -> u8 {
-        parse_bcd2(*self.minute_bytes_fixed_len())
+        parse_digits2(*self.minute_bytes_fixed_len())
     }
 
     /// Returns the second as a string slice.
@@ -510,7 +510,7 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn second(&self) -> u8 {
-        parse_bcd2(*self.second_bytes_fixed_len())
+        parse_digits2(*self.second_bytes_fixed_len())
     }
 
     /// Sets the given hour value to the string.

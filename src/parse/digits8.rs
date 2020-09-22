@@ -1,6 +1,6 @@
 //! Parser functions for a string with 8 digits.
 
-/// Parses 8-digits BCD effectively in little endian.
+/// Parses 8 digits effectively in little endian.
 ///
 /// # Failures
 ///
@@ -9,11 +9,11 @@
 /// should ensure that the bytes consists of only ASCII digits.
 #[cfg(any(not(target_endian = "big"), test))]
 #[must_use]
-fn parse_bcd8_le(bcd: [u8; 8]) -> u32 {
-    // Sample: bcd == "12345678" (i.e. bcd == [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38]).
+fn parse_digits8_le(digits: [u8; 8]) -> u32 {
+    // Sample: digits == "12345678" (i.e. digits == [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38]).
 
     // Sample: chunk1 == 0x38_37_36_35_34_33_32_31.
-    let chunk1 = u64::from_le_bytes(bcd);
+    let chunk1 = u64::from_le_bytes(digits);
 
     /// Mask for 2nd, 4th, 6th, and 8th significant digits.
     const LOWER_MASK_1: u64 = 0x0f_00_0f_00_0f_00_0f_00;
@@ -52,7 +52,7 @@ fn parse_bcd8_le(bcd: [u8; 8]) -> u32 {
     (chunk3 >> 32) as u32 + (chunk3 as u32) * 10000
 }
 
-/// Parses 8-digits BCD effectively in big endian.
+/// Parses 8 digits effectively in big endian.
 ///
 /// # Failures
 ///
@@ -61,11 +61,11 @@ fn parse_bcd8_le(bcd: [u8; 8]) -> u32 {
 /// should ensure that the bytes consists of only ASCII digits.
 #[cfg(any(target_endian = "big", test))]
 #[must_use]
-fn parse_bcd8_be(bcd: [u8; 8]) -> u32 {
-    // Sample: bcd == "12345678" (i.e. bcd == [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38]).
+fn parse_digits8_be(digits: [u8; 8]) -> u32 {
+    // Sample: digits == "12345678" (i.e. digits == [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38]).
 
     // Sample: chunk1 == 0x31_32_33_34_35_36_37_38.
-    let chunk1 = u64::from_be_bytes(bcd);
+    let chunk1 = u64::from_be_bytes(digits);
 
     /// Mask for 2nd, 4th, 6th, and 8th significant digits.
     const LOWER_MASK_1: u64 = 0x00_0f_00_0f_00_0f_00_0f;
@@ -103,7 +103,7 @@ fn parse_bcd8_be(bcd: [u8; 8]) -> u32 {
     (chunk3 >> 32) as u32 * 10000 + chunk3 as u32
 }
 
-/// Parses 8-digits BCD effectively.
+/// Parses 8 digits effectively.
 ///
 /// # Failures
 ///
@@ -112,14 +112,14 @@ fn parse_bcd8_be(bcd: [u8; 8]) -> u32 {
 /// should ensure that the bytes consists of only ASCII digits.
 #[inline]
 #[must_use]
-pub(crate) fn parse_bcd8(bcd: [u8; 8]) -> u32 {
+pub(crate) fn parse_digits8(digits: [u8; 8]) -> u32 {
     #[cfg(not(target_endian = "big"))]
     {
-        parse_bcd8_le(bcd)
+        parse_digits8_le(digits)
     }
     #[cfg(target_endian = "big")]
     {
-        parse_bcd8_be(bcd)
+        parse_digits8_be(digits)
     }
 }
 
@@ -134,26 +134,26 @@ mod tests {
     }
 
     #[test]
-    fn bcd8_le() {
-        assert_eq!(parse_bcd8_le(as_digit8("00000000")), 00000000);
-        assert_eq!(parse_bcd8_le(as_digit8("12345678")), 12345678);
-        assert_eq!(parse_bcd8_le(as_digit8("87654321")), 87654321);
-        assert_eq!(parse_bcd8_le(as_digit8("99999999")), 99999999);
+    fn digits8_le() {
+        assert_eq!(parse_digits8_le(as_digit8("00000000")), 00000000);
+        assert_eq!(parse_digits8_le(as_digit8("12345678")), 12345678);
+        assert_eq!(parse_digits8_le(as_digit8("87654321")), 87654321);
+        assert_eq!(parse_digits8_le(as_digit8("99999999")), 99999999);
     }
 
     #[test]
-    fn bcd8_be() {
-        assert_eq!(parse_bcd8_be(as_digit8("00000000")), 00000000);
-        assert_eq!(parse_bcd8_be(as_digit8("12345678")), 12345678);
-        assert_eq!(parse_bcd8_be(as_digit8("87654321")), 87654321);
-        assert_eq!(parse_bcd8_be(as_digit8("99999999")), 99999999);
+    fn digits8_be() {
+        assert_eq!(parse_digits8_be(as_digit8("00000000")), 00000000);
+        assert_eq!(parse_digits8_be(as_digit8("12345678")), 12345678);
+        assert_eq!(parse_digits8_be(as_digit8("87654321")), 87654321);
+        assert_eq!(parse_digits8_be(as_digit8("99999999")), 99999999);
     }
 
     #[test]
-    fn bcd8() {
-        assert_eq!(parse_bcd8(as_digit8("00000000")), 00000000);
-        assert_eq!(parse_bcd8(as_digit8("12345678")), 12345678);
-        assert_eq!(parse_bcd8(as_digit8("87654321")), 87654321);
-        assert_eq!(parse_bcd8(as_digit8("99999999")), 99999999);
+    fn digits8() {
+        assert_eq!(parse_digits8(as_digit8("00000000")), 00000000);
+        assert_eq!(parse_digits8(as_digit8("12345678")), 12345678);
+        assert_eq!(parse_digits8(as_digit8("87654321")), 87654321);
+        assert_eq!(parse_digits8(as_digit8("99999999")), 99999999);
     }
 }
