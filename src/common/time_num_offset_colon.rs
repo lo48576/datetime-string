@@ -17,9 +17,6 @@ use crate::{parse::parse_digits2, str::write_digit2};
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
 
-#[cfg(feature = "serde")]
-use serde::Serialize;
-
 use crate::common::TimeOffsetSign;
 
 use crate::error::{ComponentKind, Error, ErrorKind};
@@ -82,14 +79,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
 /// [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct TimeNumOffsetColonStr(str);
+pub struct TimeNumOffsetColonStr([u8]);
 
 impl TimeNumOffsetColonStr {
     /// Creates a `&TimeNumOffsetColonStr` from the given byte slice.
@@ -100,7 +98,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
-        Self::from_str_unchecked(str::from_utf8_unchecked(s))
+        &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut TimeNumOffsetColonStr` from the given mutable byte slice.
@@ -111,18 +109,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
-        Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
-    }
-
-    /// Creates a `&TimeNumOffsetColonStr` from the given string slice.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const TimeNumOffsetColonStr)
+        &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut TimeNumOffsetColonStr` from the given mutable string slice.
@@ -133,7 +120,9 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut TimeNumOffsetColonStr)
+        // This is safe because `TimeNumOffsetColonStr` ensures that the
+        // underlying bytes are ASCII string after modification.
+        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&TimeNumOffsetColonStr` from a string slice.
@@ -248,7 +237,11 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        unsafe {
+            // This is safe because `TimeNumOffsetColonStr` ensures that the
+            // underlying bytes are ASCII string.
+            str::from_utf8_unchecked(&self.0)
+        }
     }
 
     /// Returns a byte slice.
@@ -269,7 +262,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+        &self.0
     }
 
     /// Returns a fixed length byte slice.
@@ -333,7 +326,7 @@ impl TimeNumOffsetColonStr {
         if self.as_bytes()[0] == b'+' {
             TimeOffsetSign::Positive
         } else {
-            debug_assert_eq!(self.as_bytes()[0], b'-');
+            debug_assert_eq!(self.0[0], b'-');
             TimeOffsetSign::Negative
         }
     }
@@ -347,9 +340,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     unsafe fn sign_byte_mut(&mut self) -> &mut u8 {
-        // This must be always safe because a valid time-numoffset string is
-        // also a non-empty ASCII string.
-        self.0.as_bytes_mut().get_unchecked_mut(0)
+        self.0.get_unchecked_mut(0)
     }
 
     /// Sets the given sign.
@@ -397,7 +388,11 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn hour_abs_str(&self) -> &str {
-        &self.0[HOUR_ABS_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and
+            // `HOUR_ABS_RANGE` is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(HOUR_ABS_RANGE))
+        }
     }
 
     /// Returns the absolute hour as a fixed length byte slice.
@@ -415,9 +410,11 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn hour_abs_bytes_fixed_len(&self) -> &[u8; 2] {
-        let ptr = self.0[HOUR_ABS_RANGE].as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid time-numoffset string.
-        unsafe { &*ptr }
+        unsafe {
+            // This is safe because `HOUR_ABS_RANGE` fits inside the string.
+            let ptr = self.0.as_ptr().add(HOUR_ABS_RANGE.start) as *const [u8; 2];
+            &*ptr
+        }
     }
 
     /// Returns the absolute hour as a fixed length mutable byte slice.
@@ -429,8 +426,8 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     unsafe fn hour_abs_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
-        let ptr = self.0[HOUR_ABS_RANGE].as_mut_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid time-numoffset string.
+        // This is safe because `HOUR_ABS_RANGE` fits inside the string.
+        let ptr = self.0.as_mut_ptr().add(HOUR_ABS_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
 
@@ -499,7 +496,11 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn hour_signed_str(&self) -> &str {
-        &self.0[HOUR_SIGNED_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and
+            // `HOUR_SIGNED_RANGE` is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(HOUR_SIGNED_RANGE))
+        }
     }
 
     /// Returns the signed hour as a fixed length byte slice.
@@ -643,7 +644,11 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn minute_str(&self) -> &str {
-        &self.0[MINUTE_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and
+            // `MINUTE_RANGE` is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(MINUTE_RANGE))
+        }
     }
 
     /// Returns the minute as a fixed length byte slice.
@@ -661,9 +666,11 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn minute_bytes_fixed_len(&self) -> &[u8; 2] {
-        let ptr = self.0[MINUTE_RANGE].as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid time-numoffset string.
-        unsafe { &*ptr }
+        unsafe {
+            // This is safe because `MINUTE_RANGE` fits inside the string.
+            let ptr = self.0.as_ptr().add(MINUTE_RANGE.start) as *const [u8; 2];
+            &*ptr
+        }
     }
 
     /// Returns the minute as a fixed length mutable byte slice.
@@ -675,8 +682,8 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     unsafe fn minute_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
-        let ptr = self.0[MINUTE_RANGE].as_mut_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid time-numoffset string.
+        // This is safe because `MINUTE_RANGE` fits inside the string.
+        let ptr = self.0.as_mut_ptr().add(MINUTE_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
 
@@ -891,11 +898,7 @@ impl<'a> TryFrom<&'a str> for &'a TimeNumOffsetColonStr {
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
-        validate_bytes(v.as_bytes())?;
-        Ok(unsafe {
-            // This is safe because a valid time-numoffset string is also an ASCII string.
-            TimeNumOffsetColonStr::from_str_unchecked(v)
-        })
+        Self::try_from(v.as_bytes())
     }
 }
 
@@ -915,7 +918,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut TimeNumOffsetColonStr {
 impl fmt::Display for TimeNumOffsetColonStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.as_str().fmt(f)
     }
 }
 
@@ -924,7 +927,7 @@ impl ops::Deref for TimeNumOffsetColonStr {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.as_str()
     }
 }
 
@@ -935,6 +938,16 @@ impl_cmp_symmetric!([u8], &TimeNumOffsetColonStr, [u8]);
 impl_cmp_symmetric!(str, TimeNumOffsetColonStr, str);
 impl_cmp_symmetric!(str, TimeNumOffsetColonStr, &str);
 impl_cmp_symmetric!(str, &TimeNumOffsetColonStr, str);
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for TimeNumOffsetColonStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Owned string for a time offset in `+hh:mm` or `-hh:mm` format, such as `+09:00` and `-00:00`.
 ///
@@ -1185,7 +1198,7 @@ impl_cmp_symmetric!([u8], TimeNumOffsetColonString, &[u8]);
 impl_cmp_symmetric!([u8], &TimeNumOffsetColonString, [u8]);
 
 #[cfg(feature = "serde")]
-impl Serialize for TimeNumOffsetColonString {
+impl serde::Serialize for TimeNumOffsetColonString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
