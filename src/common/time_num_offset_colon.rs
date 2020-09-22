@@ -12,7 +12,7 @@ use core::{
     str,
 };
 
-use crate::{parse::parse_bcd2, str::write_digit2};
+use crate::{parse::parse_digits2, str::write_digit2};
 
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
@@ -63,11 +63,11 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
         return Err(ErrorKind::InvalidComponentType(ComponentKind::OffsetMinute).into());
     }
 
-    let hour = parse_bcd2(hour_s);
+    let hour = parse_digits2(hour_s);
     if hour > HOUR_MAX {
         return Err(ErrorKind::ComponentOutOfRange(ComponentKind::OffsetHour).into());
     }
-    let minute = parse_bcd2(minute_s);
+    let minute = parse_digits2(minute_s);
     if minute > MINUTE_MAX {
         return Err(ErrorKind::ComponentOutOfRange(ComponentKind::OffsetMinute).into());
     }
@@ -448,7 +448,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn hour_abs(&self) -> u8 {
-        parse_bcd2(*self.hour_abs_bytes_fixed_len())
+        parse_digits2(*self.hour_abs_bytes_fixed_len())
     }
 
     /// Sets the given absolute hour value to the string.
@@ -694,7 +694,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn minute(&self) -> u8 {
-        parse_bcd2(*self.minute_bytes_fixed_len())
+        parse_digits2(*self.minute_bytes_fixed_len())
     }
 
     /// Sets the given minute value to the string.

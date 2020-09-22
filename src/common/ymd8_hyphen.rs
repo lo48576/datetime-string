@@ -14,7 +14,7 @@ use core::{
 
 use crate::{
     datetime::{validate_ym0d, validate_ym1d},
-    parse::{parse_bcd2, parse_bcd4},
+    parse::{parse_digits2, parse_digits4},
     str::{write_digit2, write_digit4},
 };
 
@@ -65,15 +65,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
         return Err(ErrorKind::InvalidComponentType(ComponentKind::Mday).into());
     }
 
-    let month1 = parse_bcd2(month_s);
+    let month1 = parse_digits2(month_s);
     if (month1 < 1) || (month1 > 12) {
         return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Month).into());
     }
-    let mday = parse_bcd2(mday_s);
+    let mday = parse_digits2(mday_s);
     if mday < 1 {
         return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Mday).into());
     }
-    let year = parse_bcd4(year_s);
+    let year = parse_digits4(year_s);
 
     validate_ym1d(year, month1, mday).map_err(Into::into)
 }
@@ -360,7 +360,7 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn year(&self) -> u16 {
-        parse_bcd4(*self.year_bytes_fixed_len())
+        parse_digits4(*self.year_bytes_fixed_len())
     }
 
     /// Returns the month as a string slice.
@@ -428,7 +428,7 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn month1(&self) -> u8 {
-        parse_bcd2(*self.month_bytes_fixed_len())
+        parse_digits2(*self.month_bytes_fixed_len())
     }
 
     /// Returns the 0-based month as an integer.
@@ -445,7 +445,7 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn month0(&self) -> u8 {
-        parse_bcd2(*self.month_bytes_fixed_len()).wrapping_sub(1)
+        parse_digits2(*self.month_bytes_fixed_len()).wrapping_sub(1)
     }
 
     /// Returns the day of month as a string slice.
@@ -513,7 +513,7 @@ impl Ymd8HyphenStr {
     #[inline]
     #[must_use]
     pub fn mday(&self) -> u8 {
-        parse_bcd2(*self.mday_bytes_fixed_len())
+        parse_digits2(*self.mday_bytes_fixed_len())
     }
 
     /// Sets the given year to the string.

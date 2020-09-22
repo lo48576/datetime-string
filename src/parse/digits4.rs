@@ -1,6 +1,6 @@
 //! Parser functions for a string with 4 digits.
 
-/// Parses 4-digits BCD effectively in little endian.
+/// Parses 4 digits effectively in little endian.
 ///
 /// # Failures
 ///
@@ -9,11 +9,11 @@
 /// should ensure that the bytes consists of only ASCII digits.
 #[cfg(any(not(target_endian = "big"), test))]
 #[must_use]
-fn parse_bcd4_le(bcd: [u8; 4]) -> u16 {
-    // Sample: bcd == "1234" (i.e. bcd == [0x31, 0x32, 0x33, 0x34]).
+fn parse_digits4_le(digits: [u8; 4]) -> u16 {
+    // Sample: digits == "1234" (i.e. digits == [0x31, 0x32, 0x33, 0x34]).
 
     // Sample: chunk1 == 0x34_33_32_31.
-    let chunk1 = u32::from_le_bytes(bcd);
+    let chunk1 = u32::from_le_bytes(digits);
 
     /// Mask for 2nd and 4th significant digits.
     const LOWER_MASK_1: u32 = 0x0f_00_0f_00;
@@ -38,7 +38,7 @@ fn parse_bcd4_le(bcd: [u8; 4]) -> u16 {
     ((chunk2 >> 16) + (chunk2 * 100)) as u16
 }
 
-/// Parses 4-digits BCD effectively in big endian.
+/// Parses 4 digits effectively in big endian.
 ///
 /// # Failures
 ///
@@ -47,11 +47,11 @@ fn parse_bcd4_le(bcd: [u8; 4]) -> u16 {
 /// should ensure that the bytes consists of only ASCII digits.
 #[cfg(any(target_endian = "big", test))]
 #[must_use]
-fn parse_bcd4_be(bcd: [u8; 4]) -> u16 {
-    // Sample: bcd == "1234" (i.e. bcd == [0x31, 0x32, 0x33, 0x34]).
+fn parse_digits4_be(digits: [u8; 4]) -> u16 {
+    // Sample: digits == "1234" (i.e. digits == [0x31, 0x32, 0x33, 0x34]).
 
     // Sample: chunk1 == 0x31_32_33_34.
-    let chunk1 = u32::from_be_bytes(bcd);
+    let chunk1 = u32::from_be_bytes(digits);
 
     /// Mask for 2nd and 4th significant digits.
     const LOWER_MASK_1: u32 = 0x00_0f_00_0f;
@@ -75,7 +75,7 @@ fn parse_bcd4_be(bcd: [u8; 4]) -> u16 {
     ((chunk2 >> 16) * 100 + chunk2) as u16
 }
 
-/// Parses 4-digits BCD effectively.
+/// Parses 4 digits effectively.
 ///
 /// # Failures
 ///
@@ -84,14 +84,14 @@ fn parse_bcd4_be(bcd: [u8; 4]) -> u16 {
 /// should ensure that the bytes consists of only ASCII digits.
 #[inline]
 #[must_use]
-pub(crate) fn parse_bcd4(bcd: [u8; 4]) -> u16 {
+pub(crate) fn parse_digits4(digits: [u8; 4]) -> u16 {
     #[cfg(not(target_endian = "big"))]
     {
-        parse_bcd4_le(bcd)
+        parse_digits4_le(digits)
     }
     #[cfg(target_endian = "big")]
     {
-        parse_bcd4_be(bcd)
+        parse_digits4_be(digits)
     }
 }
 
@@ -106,26 +106,26 @@ mod tests {
     }
 
     #[test]
-    fn bcd4_le() {
-        assert_eq!(parse_bcd4_le(as_digit4("0000")), 0000);
-        assert_eq!(parse_bcd4_le(as_digit4("1234")), 1234);
-        assert_eq!(parse_bcd4_le(as_digit4("8765")), 8765);
-        assert_eq!(parse_bcd4_le(as_digit4("9999")), 9999);
+    fn digits4_le() {
+        assert_eq!(parse_digits4_le(as_digit4("0000")), 0000);
+        assert_eq!(parse_digits4_le(as_digit4("1234")), 1234);
+        assert_eq!(parse_digits4_le(as_digit4("8765")), 8765);
+        assert_eq!(parse_digits4_le(as_digit4("9999")), 9999);
     }
 
     #[test]
-    fn bcd4_be() {
-        assert_eq!(parse_bcd4_be(as_digit4("0000")), 0000);
-        assert_eq!(parse_bcd4_be(as_digit4("1234")), 1234);
-        assert_eq!(parse_bcd4_be(as_digit4("8765")), 8765);
-        assert_eq!(parse_bcd4_be(as_digit4("9999")), 9999);
+    fn digits4_be() {
+        assert_eq!(parse_digits4_be(as_digit4("0000")), 0000);
+        assert_eq!(parse_digits4_be(as_digit4("1234")), 1234);
+        assert_eq!(parse_digits4_be(as_digit4("8765")), 8765);
+        assert_eq!(parse_digits4_be(as_digit4("9999")), 9999);
     }
 
     #[test]
-    fn bcd4() {
-        assert_eq!(parse_bcd4(as_digit4("0000")), 0000);
-        assert_eq!(parse_bcd4(as_digit4("1234")), 1234);
-        assert_eq!(parse_bcd4(as_digit4("8765")), 8765);
-        assert_eq!(parse_bcd4(as_digit4("9999")), 9999);
+    fn digits4() {
+        assert_eq!(parse_digits4(as_digit4("0000")), 0000);
+        assert_eq!(parse_digits4(as_digit4("1234")), 1234);
+        assert_eq!(parse_digits4(as_digit4("8765")), 8765);
+        assert_eq!(parse_digits4(as_digit4("9999")), 9999);
     }
 }

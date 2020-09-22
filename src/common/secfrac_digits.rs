@@ -16,7 +16,7 @@ use serde::Serialize;
 
 use crate::{
     error::{ComponentKind, Error, ErrorKind},
-    parse::parse_bcd8,
+    parse::parse_digits8,
 };
 
 #[cfg(feature = "alloc")]
@@ -367,7 +367,7 @@ impl SecfracDigitsStr {
         let mut buf: [u8; 8] = [b'0'; 8];
         // Note that the first two digits should be `0`.
         buf[2..(2 + len6)].copy_from_slice(&bytes[..len6]);
-        parse_bcd8(buf)
+        parse_digits8(buf)
     }
 
     /// Returns a microseconds precision substring if there are enough digits.
@@ -479,7 +479,7 @@ impl SecfracDigitsStr {
 
         let mut buf: [u8; 8] = [b'0'; 8];
         buf[..len8].copy_from_slice(&bytes[..len8]);
-        let upper8 = parse_bcd8(buf) * 10;
+        let upper8 = parse_digits8(buf) * 10;
         if len > 8 {
             upper8 + (bytes[8] - b'0') as u32
         } else {
