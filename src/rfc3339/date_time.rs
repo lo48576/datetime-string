@@ -61,14 +61,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
 /// [`date-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct DateTimeStr(str);
+pub struct DateTimeStr([u8]);
 
 impl DateTimeStr {
     /// Creates a `&DateTimeStr` from the given byte slice.
@@ -79,7 +80,7 @@ impl DateTimeStr {
     #[inline]
     #[must_use]
     unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
-        Self::from_str_unchecked(str::from_utf8_unchecked(s))
+        &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut DateTimeStr` from the given mutable byte slice.
@@ -90,18 +91,7 @@ impl DateTimeStr {
     #[inline]
     #[must_use]
     unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
-        Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
-    }
-
-    /// Creates a `&DateTimeStr` from the given string slice.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const DateTimeStr)
+        &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut DateTimeStr` from the given mutable string slice.
@@ -112,7 +102,9 @@ impl DateTimeStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut DateTimeStr)
+        // This is safe because `DateTimeStr` ensures that the underlying
+        // bytes are ASCII string after modification.
+        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&DateTimeStr` from a string slice.
@@ -207,7 +199,11 @@ impl DateTimeStr {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        unsafe {
+            // This is safe because the `SecfracDigitsStr` ensures that the
+            // underlying bytes are ASCII string.
+            str::from_utf8_unchecked(&self.0)
+        }
     }
 
     /// Returns a byte slice.
@@ -228,7 +224,7 @@ impl DateTimeStr {
     #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+        &self.0
     }
 
     /// Decomposes the string into `&FullDateStr` and `&FullTimeStr`.
@@ -248,17 +244,16 @@ impl DateTimeStr {
     #[inline]
     #[must_use]
     pub fn decompose(&self) -> (&FullDateStr, &FullTimeStr) {
-        let bytes = self.0.as_bytes();
-
         let date = unsafe {
-            // This is safe because a `date-time` string has a `full-date`
-            // followed by `full-time`.
-            FullDateStr::from_bytes_unchecked(&bytes[DATE_RANGE])
+            // This is safe because `DATE_RANGE` fits inside the string, and a
+            // `date-time` string has a `full-date` followed by 'T' and `full-time`.
+            FullDateStr::from_bytes_unchecked(self.0.get_unchecked(DATE_RANGE))
         };
         let time = unsafe {
-            // This is safe because a `date-time` string has a `full-time`
-            // suffix following `full-date`.
-            FullTimeStr::from_bytes_unchecked(&bytes[TIME_RANGE])
+            // This is safe because `TIME_RANGE` fits inside the string, and a
+            // `date-time` string has a `full-time` suffix following `full-date`
+            // and 'T'.
+            FullTimeStr::from_bytes_unchecked(self.0.get_unchecked(TIME_RANGE))
         };
 
         (date, time)
@@ -289,17 +284,17 @@ impl DateTimeStr {
     #[must_use]
     pub fn decompose_mut(&mut self) -> (&mut FullDateStr, &mut FullTimeStr) {
         unsafe {
-            // This is safe because `&mut PartialTimeStr` and `&mut TimeOffsetStr`
-            // can only have ASCII strings.
-            let (date, t_time) = self.0.as_bytes_mut().split_at_mut(T_POS);
+            let (date, t_time) = self.0.split_at_mut(T_POS);
             // Note that `t_time` contains the separator "T" as a prefix.
-            let time = &mut t_time[1..];
+            let time = t_time.get_unchecked_mut(1..);
 
             // This is safe because a `date-time` string has a `full-date`
-            // followed by `full-time`.
+            // followed by 'T' and `full-time`, and `FullDateStr` ensures that
+            // the underlying bytes are ASCII string after modification.
             let date = FullDateStr::from_bytes_unchecked_mut(date);
             // This is safe because a `date-time` string has a `full-time`
-            // suffix following `full-date`.
+            // suffix following `full-date` and 'T', and `FullTimeStr` ensures
+            // that the underlying bytes are ASCII string after modification.
             let time = FullTimeStr::from_bytes_unchecked_mut(time);
 
             (date, time)
@@ -324,7 +319,7 @@ impl DateTimeStr {
     pub fn date(&self) -> &FullDateStr {
         unsafe {
             // This is safe because the range is valid for the shortest possible string.
-            let s = self.0.as_bytes().get_unchecked(DATE_RANGE);
+            let s = self.0.get_unchecked(DATE_RANGE);
             // This is safe because a `date-time` string has a `full-date` before "T".
             FullDateStr::from_bytes_unchecked(s)
         }
@@ -351,8 +346,10 @@ impl DateTimeStr {
     #[must_use]
     pub fn date_mut(&mut self) -> &mut FullDateStr {
         unsafe {
-            // This is safe because the range is valid for the shortest possible string.
-            let s = self.0.as_bytes_mut().get_unchecked_mut(DATE_RANGE);
+            // This is safe because the range is valid for the shortest possible
+            // string, and `FullDateStr` ensures that the underlying bytes are
+            // ASCII string after modification.
+            let s = self.0.get_unchecked_mut(DATE_RANGE);
             // This is safe because a `date-time` string has a `partial-time` before "T".
             FullDateStr::from_bytes_unchecked_mut(s)
         }
@@ -376,7 +373,7 @@ impl DateTimeStr {
     pub fn time(&self) -> &FullTimeStr {
         unsafe {
             // This is safe because the range is valid for the shortest possible string.
-            let s = self.0.as_bytes().get_unchecked(TIME_RANGE);
+            let s = self.0.get_unchecked(TIME_RANGE);
             // This is safe because a `date-time` string has a `time-offset` right after "T".
             FullTimeStr::from_bytes_unchecked(s)
         }
@@ -405,8 +402,10 @@ impl DateTimeStr {
     #[must_use]
     pub fn time_mut(&mut self) -> &mut FullTimeStr {
         unsafe {
-            // This is safe because the range is valid for the shortest possible string.
-            let s = self.0.as_bytes_mut().get_unchecked_mut(TIME_RANGE);
+            // This is safe because the range is valid for the shortest possible
+            // string, and `FullTimeStr` ensures that the underlying bytes are
+            // ASCII string after modification.
+            let s = self.0.get_unchecked_mut(TIME_RANGE);
             // This is safe because a `date-time` string has a `time-offset` right after "T".
             FullTimeStr::from_bytes_unchecked_mut(s)
         }
@@ -426,7 +425,7 @@ impl alloc::borrow::ToOwned for DateTimeStr {
 impl AsRef<[u8]> for DateTimeStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        self.as_bytes()
+        &self.0
     }
 }
 
@@ -482,11 +481,7 @@ impl<'a> TryFrom<&'a str> for &'a DateTimeStr {
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
-        validate_bytes(v.as_bytes())?;
-        Ok(unsafe {
-            // This is safe because a valid `date-time` string is also an ASCII string.
-            DateTimeStr::from_str_unchecked(v)
-        })
+        Self::try_from(v.as_bytes())
     }
 }
 
@@ -497,7 +492,9 @@ impl<'a> TryFrom<&'a mut str> for &'a mut DateTimeStr {
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
-            // This is safe because a valid `date-time` string is also an ASCII string.
+            // This is safe because the string is already validated and
+            // `DateTimeStr` ensures that the underlying bytes are ASCII
+            // string after modification.
             DateTimeStr::from_str_unchecked_mut(v)
         })
     }
@@ -506,7 +503,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut DateTimeStr {
 impl fmt::Display for DateTimeStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.as_str().fmt(f)
     }
 }
 
@@ -515,7 +512,7 @@ impl ops::Deref for DateTimeStr {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.as_str()
     }
 }
 
@@ -526,6 +523,16 @@ impl_cmp_symmetric!([u8], &DateTimeStr, [u8]);
 impl_cmp_symmetric!(str, DateTimeStr, str);
 impl_cmp_symmetric!(str, DateTimeStr, &str);
 impl_cmp_symmetric!(str, &DateTimeStr, str);
+
+#[cfg(feature = "serde")]
+impl Serialize for DateTimeStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Items for serde support.
 #[cfg(feature = "serde")]
