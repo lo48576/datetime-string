@@ -5,9 +5,6 @@ use core::{convert::TryFrom, fmt, ops, str};
 
 use alloc::{string::String, vec::Vec};
 
-#[cfg(feature = "serde")]
-use serde::Serialize;
-
 use crate::Error;
 
 use super::{validate_bytes, SecfracDigitsStr};
@@ -39,27 +36,17 @@ use super::{validate_bytes, SecfracDigitsStr};
 /// [`time-secfrac`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8; 8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct SecfracDigitsString(String);
+pub struct SecfracDigitsString(Vec<u8>);
 
 impl SecfracDigitsString {
-    /// Creates a `SecfracDigitsString` from the given string.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(&s)` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_string_unchecked(s: String) -> Self {
-        Self(s)
-    }
-
     /// Creates a `SecfracDigitsString` from the given bytes.
     ///
     /// # Safety
@@ -68,7 +55,7 @@ impl SecfracDigitsString {
     #[inline]
     #[must_use]
     unsafe fn from_bytes_unchecked(s: Vec<u8>) -> Self {
-        Self(String::from_utf8_unchecked(s))
+        Self(s)
     }
 
     /// Returns a `&SecfracDigitsStr` for the string.
@@ -90,8 +77,8 @@ impl SecfracDigitsString {
     #[must_use]
     pub fn as_deref(&self) -> &SecfracDigitsStr {
         unsafe {
-            // This is safe because `self.0` should be already validated.
-            SecfracDigitsStr::from_str_unchecked(&self.0)
+            // This is safe because `self.0` is already validated.
+            SecfracDigitsStr::from_bytes_unchecked(&self.0)
         }
     }
 
@@ -114,8 +101,8 @@ impl SecfracDigitsString {
     #[must_use]
     pub fn as_deref_mut(&mut self) -> &mut SecfracDigitsStr {
         unsafe {
-            // This is safe because `self.0` should be already validated.
-            SecfracDigitsStr::from_str_unchecked_mut(&mut self.0)
+            // This is safe because `self.0` is already validated.
+            SecfracDigitsStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
 }
@@ -137,7 +124,7 @@ impl core::borrow::BorrowMut<SecfracDigitsStr> for SecfracDigitsString {
 impl AsRef<[u8]> for SecfracDigitsString {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        self.as_bytes()
+        &self.0
     }
 }
 
@@ -158,22 +145,25 @@ impl AsRef<SecfracDigitsStr> for SecfracDigitsString {
 impl From<SecfracDigitsString> for Vec<u8> {
     #[inline]
     fn from(v: SecfracDigitsString) -> Vec<u8> {
-        v.0.into_bytes()
+        v.0
     }
 }
 
 impl From<SecfracDigitsString> for String {
     #[inline]
     fn from(v: SecfracDigitsString) -> String {
-        v.0
+        unsafe {
+            // This is safe because a valid `SecfracDigitsString` is an ASCII string.
+            String::from_utf8_unchecked(v.0)
+        }
     }
 }
 
 impl From<&SecfracDigitsStr> for SecfracDigitsString {
     fn from(v: &SecfracDigitsStr) -> Self {
         unsafe {
-            // This is safe because the value should be already validated.
-            Self::from_string_unchecked(v.as_str().into())
+            // This is safe because the value is already validated.
+            Self::from_bytes_unchecked(v.as_bytes().into())
         }
     }
 }
@@ -250,6 +240,16 @@ impl_cmp_symmetric!(str, &SecfracDigitsString, str);
 impl_cmp_symmetric!([u8], SecfracDigitsString, [u8]);
 impl_cmp_symmetric!([u8], SecfracDigitsString, &[u8]);
 impl_cmp_symmetric!([u8], &SecfracDigitsString, [u8]);
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for SecfracDigitsString {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Items for serde support.
 #[cfg(feature = "serde")]

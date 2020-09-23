@@ -36,14 +36,15 @@ use super::{validate_bytes, FullTimeStr};
 /// [`full-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `Vec<u8>` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct FullTimeString(String);
+pub struct FullTimeString(Vec<u8>);
 
 impl FullTimeString {
     /// Creates a `FullTimeString` from the given string.
@@ -54,7 +55,7 @@ impl FullTimeString {
     #[inline]
     #[must_use]
     unsafe fn from_string_unchecked(s: String) -> Self {
-        Self(s)
+        Self(s.into_bytes())
     }
 
     /// Creates a `FullTimeString` from the given bytes.
@@ -65,7 +66,7 @@ impl FullTimeString {
     #[inline]
     #[must_use]
     unsafe fn from_bytes_unchecked(s: Vec<u8>) -> Self {
-        Self(String::from_utf8_unchecked(s))
+        Self(s)
     }
 
     /// Returns a `&FullTimeStr` for the string.
@@ -88,7 +89,7 @@ impl FullTimeString {
     pub fn as_deref(&self) -> &FullTimeStr {
         unsafe {
             // This is safe because `self.0` is valid `hh:mm:ss` string.
-            FullTimeStr::from_str_unchecked(&self.0)
+            FullTimeStr::from_bytes_unchecked(&self.0)
         }
     }
 
@@ -111,8 +112,9 @@ impl FullTimeString {
     #[must_use]
     pub fn as_deref_mut(&mut self) -> &mut FullTimeStr {
         unsafe {
-            // This is safe because `self.0` is valid `hh:mm:ss` string.
-            FullTimeStr::from_str_unchecked_mut(&mut self.0)
+            // This is safe because `self.0` is valid, and `FullTimeStr` ensures
+            // that the underlying bytes are ASCII string after modification.
+            FullTimeStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
 }
@@ -155,14 +157,17 @@ impl AsRef<FullTimeStr> for FullTimeString {
 impl From<FullTimeString> for Vec<u8> {
     #[inline]
     fn from(v: FullTimeString) -> Vec<u8> {
-        v.0.into_bytes()
+        v.0
     }
 }
 
 impl From<FullTimeString> for String {
     #[inline]
     fn from(v: FullTimeString) -> String {
-        v.0
+        unsafe {
+            // This is safe because a valid `full-time` string is an ASCII string.
+            String::from_utf8_unchecked(v.0)
+        }
     }
 }
 
@@ -247,6 +252,16 @@ impl_cmp_symmetric!(str, &FullTimeString, str);
 impl_cmp_symmetric!([u8], FullTimeString, [u8]);
 impl_cmp_symmetric!([u8], FullTimeString, &[u8]);
 impl_cmp_symmetric!([u8], &FullTimeString, [u8]);
+
+#[cfg(feature = "serde")]
+impl Serialize for FullTimeString {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Items for serde support.
 #[cfg(feature = "serde")]

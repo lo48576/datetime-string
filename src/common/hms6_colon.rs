@@ -17,9 +17,6 @@ use crate::{parse::parse_digits2, str::write_digit2};
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
 
-#[cfg(feature = "serde")]
-use serde::Serialize;
-
 use crate::error::{ComponentKind, Error, ErrorKind};
 
 /// Length of `hh:mm:ss` string.
@@ -101,14 +98,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct Hms6ColonStr(str);
+pub struct Hms6ColonStr([u8]);
 
 impl Hms6ColonStr {
     /// Creates a `&Hms6ColonStr` from the given byte slice.
@@ -118,8 +116,8 @@ impl Hms6ColonStr {
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
-        Self::from_str_unchecked(str::from_utf8_unchecked(s))
+    pub(crate) unsafe fn from_bytes_unchecked(v: &[u8]) -> &Self {
+        &*(v as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut Hms6ColonStr` from the given mutable byte slice.
@@ -130,18 +128,7 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
-        Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
-    }
-
-    /// Creates a `&Hms6ColonStr` from the given string slice.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const Hms6ColonStr)
+        &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut Hms6ColonStr` from the given mutable string slice.
@@ -152,7 +139,9 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut Hms6ColonStr)
+        // This is safe because `Hms6ColonStr` ensures that the underlying bytes
+        // are ASCII string after modification.
+        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&Hms6ColonStr` from a string slice.
@@ -259,7 +248,11 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        unsafe {
+            // This is safe because the `Hms6ColonStr` ensures that the
+            // underlying bytes are ASCII string.
+            str::from_utf8_unchecked(&self.0)
+        }
     }
 
     /// Returns a byte slice.
@@ -280,7 +273,7 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+        &self.0
     }
 
     /// Returns a fixed length byte slice.
@@ -319,7 +312,11 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn hour_str(&self) -> &str {
-        &self.0[HOUR_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and `HOUR_RANGE`
+            // is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(HOUR_RANGE))
+        }
     }
 
     /// Returns the hour as a fixed length byte slice.
@@ -337,11 +334,11 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn hour_bytes_fixed_len(&self) -> &[u8; 2] {
-        // Using `self.0` instead of `self.0[HOUR_RANGE]` because
-        // `.as_ptr()` returns the same address.
-        let ptr = self.0.as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid `hh:mm:ss` string.
-        unsafe { &*ptr }
+        unsafe {
+            // This is safe because `HOUR_RANGE` fits inside the string.
+            let ptr = self.0.as_ptr().add(HOUR_RANGE.start) as *const [u8; 2];
+            &*ptr
+        }
     }
 
     /// Returns the hour as a fixed length mutable byte slice.
@@ -353,10 +350,8 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     unsafe fn hour_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
-        // Using `self.0` instead of `self.0[HOUR_RANGE]` because
-        // `.as_ptr()` returns the same address.
-        let ptr = self.0.as_mut_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid `hh:mm:ss` string.
+        // This is safe because `HOUR_RANGE` fits inside the string.
+        let ptr = self.0.as_mut_ptr().add(HOUR_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
 
@@ -391,7 +386,11 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn minute_str(&self) -> &str {
-        &self.0[MINUTE_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and `MINUTE_RANGE`
+            // is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(MINUTE_RANGE))
+        }
     }
 
     /// Returns the minute as a fixed length byte slice.
@@ -409,9 +408,11 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn minute_bytes_fixed_len(&self) -> &[u8; 2] {
-        let ptr = self.0[MINUTE_RANGE].as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid `hh:mm:ss` string.
-        unsafe { &*ptr }
+        unsafe {
+            // This is safe because `MINUTE_RANGE` fits inside the string.
+            let ptr = self.0.as_ptr().add(MINUTE_RANGE.start) as *const [u8; 2];
+            &*ptr
+        }
     }
 
     /// Returns the minute as a fixed length mutable byte slice.
@@ -423,8 +424,8 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     unsafe fn minute_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
-        let ptr = self.0[MINUTE_RANGE].as_mut_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid `hh:mm:ss` string.
+        // This is safe because `MINUTE_RANGE` fits inside the string.
+        let ptr = self.0.as_mut_ptr().add(MINUTE_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
 
@@ -459,7 +460,11 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn second_str(&self) -> &str {
-        &self.0[SECOND_RANGE]
+        unsafe {
+            // This is safe because the string is ASCII string and `SECOND_RANGE`
+            // is always inside the string.
+            str::from_utf8_unchecked(self.0.get_unchecked(SECOND_RANGE))
+        }
     }
 
     /// Returns the second as a fixed length byte slice.
@@ -477,9 +482,11 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     pub fn second_bytes_fixed_len(&self) -> &[u8; 2] {
-        let ptr = self.0[SECOND_RANGE].as_ptr() as *const [u8; 2];
-        // This must be always safe because the string is valid `hh:mm:ss` string.
-        unsafe { &*ptr }
+        unsafe {
+            // This is safe because `SECOND_RANGE` fits inside the string.
+            let ptr = self.0.as_ptr().add(SECOND_RANGE.start) as *const [u8; 2];
+            &*ptr
+        }
     }
 
     /// Returns the second as a fixed length mutable byte slice.
@@ -491,8 +498,8 @@ impl Hms6ColonStr {
     #[inline]
     #[must_use]
     unsafe fn second_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
-        let ptr = self.0[SECOND_RANGE].as_mut_ptr() as *mut [u8; 2];
-        // This must be always safe because the string is valid `hh:mm:ss` string.
+        // This is safe because `SECOND_RANGE` fits inside the string.
+        let ptr = self.0.as_mut_ptr().add(SECOND_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
 
@@ -637,7 +644,7 @@ impl Hms6ColonStr {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Minute).into());
         }
         unsafe {
-            // These are safe because `write_digit2()` fill the slice with ASCII digits.
+            // These are safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.hour_bytes_mut_fixed_len(), hour);
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
@@ -673,7 +680,7 @@ impl Hms6ColonStr {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Second).into());
         }
         unsafe {
-            // These are safe because `write_digit2()` fill the slice with ASCII digits.
+            // These are safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
             write_digit2(self.second_bytes_mut_fixed_len(), second);
         }
@@ -712,7 +719,7 @@ impl Hms6ColonStr {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Second).into());
         }
         unsafe {
-            // These are safe because `write_digit2()` fill the slice with ASCII digits.
+            // These are safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.hour_bytes_mut_fixed_len(), hour);
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
             write_digit2(self.second_bytes_mut_fixed_len(), second);
@@ -767,7 +774,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a Hms6ColonStr {
     fn try_from(v: &'a [u8]) -> Result<Self, Self::Error> {
         validate_bytes(v)?;
         Ok(unsafe {
-            // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
+            // This is safe because the value is successfully validated.
             Hms6ColonStr::from_bytes_unchecked(v)
         })
     }
@@ -780,7 +787,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut Hms6ColonStr {
     fn try_from(v: &'a mut [u8]) -> Result<Self, Self::Error> {
         validate_bytes(v)?;
         Ok(unsafe {
-            // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
+            // This is safe because the value is successfully validated.
             Hms6ColonStr::from_bytes_unchecked_mut(v)
         })
     }
@@ -791,11 +798,7 @@ impl<'a> TryFrom<&'a str> for &'a Hms6ColonStr {
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
-        validate_bytes(v.as_bytes())?;
-        Ok(unsafe {
-            // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
-            Hms6ColonStr::from_str_unchecked(v)
-        })
+        TryFrom::try_from(v.as_bytes())
     }
 }
 
@@ -806,7 +809,8 @@ impl<'a> TryFrom<&'a mut str> for &'a mut Hms6ColonStr {
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
-            // This is safe because a valid `hh:mm:ss` string is also an ASCII string.
+            // This is safe because the value is successfully validated, and
+            // `Hms6ColonStr` ensures the value after modification is an ASCII string.
             Hms6ColonStr::from_str_unchecked_mut(v)
         })
     }
@@ -815,7 +819,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut Hms6ColonStr {
 impl fmt::Display for Hms6ColonStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.as_str().fmt(f)
     }
 }
 
@@ -824,7 +828,7 @@ impl ops::Deref for Hms6ColonStr {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.as_str()
     }
 }
 
@@ -835,6 +839,16 @@ impl_cmp_symmetric!([u8], &Hms6ColonStr, [u8]);
 impl_cmp_symmetric!(str, Hms6ColonStr, str);
 impl_cmp_symmetric!(str, Hms6ColonStr, &str);
 impl_cmp_symmetric!(str, &Hms6ColonStr, str);
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Hms6ColonStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Owned string for a time in `%H:%M:%S` (`hh:mm:ss`) format, such as `01:23:45`.
 ///
@@ -863,10 +877,11 @@ impl_cmp_symmetric!(str, &Hms6ColonStr, str);
 /// ```
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
-// Note that `derive(Serialize)` cannot used here, because it encodes this as
-// `[u8; 8]` rather than as a string.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8; 8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
@@ -904,7 +919,7 @@ impl Hms6ColonString {
     #[must_use]
     pub fn as_deref(&self) -> &Hms6ColonStr {
         unsafe {
-            // This is safe because `self.0` is valid `hh:mm:ss` string.
+            // This is safe because the string is already validated.
             Hms6ColonStr::from_bytes_unchecked(&self.0)
         }
     }
@@ -927,7 +942,7 @@ impl Hms6ColonString {
     #[must_use]
     pub fn as_deref_mut(&mut self) -> &mut Hms6ColonStr {
         unsafe {
-            // This is safe because `self.0` is valid `hh:mm:ss` string.
+            // This is safe because the string is already validated.
             Hms6ColonStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
@@ -1071,7 +1086,7 @@ impl_cmp_symmetric!([u8], Hms6ColonString, &[u8]);
 impl_cmp_symmetric!([u8], &Hms6ColonString, [u8]);
 
 #[cfg(feature = "serde")]
-impl Serialize for Hms6ColonString {
+impl serde::Serialize for Hms6ColonString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
