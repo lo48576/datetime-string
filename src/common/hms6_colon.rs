@@ -760,6 +760,13 @@ impl AsRef<Hms6ColonStr> for Hms6ColonStr {
     }
 }
 
+impl AsMut<Hms6ColonStr> for Hms6ColonStr {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Hms6ColonStr {
+        self
+    }
+}
+
 impl<'a> From<&'a Hms6ColonStr> for &'a str {
     #[inline]
     fn from(v: &'a Hms6ColonStr) -> Self {
@@ -979,6 +986,13 @@ impl AsRef<str> for Hms6ColonString {
 impl AsRef<Hms6ColonStr> for Hms6ColonString {
     #[inline]
     fn as_ref(&self) -> &Hms6ColonStr {
+        self
+    }
+}
+
+impl AsMut<Hms6ColonStr> for Hms6ColonString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Hms6ColonStr {
         self
     }
 }

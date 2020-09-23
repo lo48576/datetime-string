@@ -153,6 +153,13 @@ impl AsRef<SecfracStr> for SecfracString {
     }
 }
 
+impl AsMut<SecfracStr> for SecfracString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut SecfracStr {
+        self
+    }
+}
+
 impl From<SecfracString> for Vec<u8> {
     #[inline]
     fn from(v: SecfracString) -> Vec<u8> {

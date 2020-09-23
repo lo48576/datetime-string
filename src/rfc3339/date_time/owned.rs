@@ -143,6 +143,13 @@ impl AsRef<DateTimeStr> for DateTimeString {
     }
 }
 
+impl AsMut<DateTimeStr> for DateTimeString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut DateTimeStr {
+        self
+    }
+}
+
 impl From<DateTimeString> for Vec<u8> {
     #[inline]
     fn from(v: DateTimeString) -> Vec<u8> {
