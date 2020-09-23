@@ -52,37 +52,45 @@ pub struct TimeOffsetStr([u8]);
 impl TimeOffsetStr {
     /// Creates a `&TimeOffsetStr` from the given byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked(s: &[u8]) -> &Self {
+        debug_assert_ok!(validate_bytes(s));
         &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut TimeOffsetStr` from the given mutable byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked_mut(s: &mut [u8]) -> &mut Self {
+        debug_assert_ok!(validate_bytes(s));
         &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut TimeOffsetStr` from the given mutable string slice.
+    ///
+    /// This performs assertion in debug build, but not in release build.
     ///
     /// # Safety
     ///
     /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
+    unsafe fn from_str_maybe_unchecked_mut(s: &mut str) -> &mut Self {
         // This is safe because ``TimeOffsetStr` ensures that the underlying
         // bytes are ASCII string after modification.
-        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
+        Self::from_bytes_maybe_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&TimeOffsetStr` from a string slice.
@@ -206,6 +214,7 @@ impl TimeOffsetStr {
         unsafe {
             // This is safe because the `TimeOffsetStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -251,7 +260,7 @@ impl TimeOffsetStr {
     /// ```
     #[inline]
     pub fn sign(&self) -> Option<TimeOffsetSign> {
-        match self.as_bytes()[0] {
+        match self.0[0] {
             b'Z' => None,
             b'+' => Some(TimeOffsetSign::Positive),
             v => {
@@ -282,7 +291,8 @@ impl TimeOffsetStr {
         Some(unsafe {
             // This is safe because `time-offset` is "Z" or `time-numoffset`,
             // and the string is already checked that not being "Z".
-            TimeNumOffsetStr::from_bytes_unchecked(&self.0)
+            debug_assert_safe_version_ok!(TimeNumOffsetStr::from_bytes(&self.0));
+            TimeNumOffsetStr::from_bytes_maybe_unchecked(&self.0)
         })
     }
 
@@ -317,7 +327,8 @@ impl TimeOffsetStr {
             // the string is already checked that not being "Z", and
             // `TimeNumOffsetStr` ensures that the underlying bytes are ASCII
             // string after modification.
-            TimeNumOffsetStr::from_bytes_unchecked_mut(&mut self.0)
+            debug_assert_ok!(TimeNumOffsetStr::from_bytes(&self.0));
+            TimeNumOffsetStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         })
     }
 }
@@ -365,7 +376,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a TimeOffsetStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `time-offset` string is also an ASCII string.
-            TimeOffsetStr::from_bytes_unchecked(v)
+            TimeOffsetStr::from_bytes_maybe_unchecked(v)
         })
     }
 }
@@ -378,7 +389,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut TimeOffsetStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `time-offset` string is also an ASCII string.
-            TimeOffsetStr::from_bytes_unchecked_mut(v)
+            TimeOffsetStr::from_bytes_maybe_unchecked_mut(v)
         })
     }
 }
@@ -400,7 +411,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut TimeOffsetStr {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
             // This is safe because a valid `time-offset` string is also an ASCII string.
-            TimeOffsetStr::from_str_unchecked_mut(v)
+            TimeOffsetStr::from_str_maybe_unchecked_mut(v)
         })
     }
 }

@@ -92,37 +92,45 @@ pub struct TimeNumOffsetColonStr([u8]);
 impl TimeNumOffsetColonStr {
     /// Creates a `&TimeNumOffsetColonStr` from the given byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked(s: &[u8]) -> &Self {
+        debug_assert_ok!(validate_bytes(s));
         &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut TimeNumOffsetColonStr` from the given mutable byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked_mut(s: &mut [u8]) -> &mut Self {
+        debug_assert_ok!(validate_bytes(s));
         &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut TimeNumOffsetColonStr` from the given mutable string slice.
+    ///
+    /// This performs assertion in debug build, but not in release build.
     ///
     /// # Safety
     ///
     /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
+    unsafe fn from_str_maybe_unchecked_mut(s: &mut str) -> &mut Self {
         // This is safe because `TimeNumOffsetColonStr` ensures that the
         // underlying bytes are ASCII string after modification.
-        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
+        Self::from_bytes_maybe_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&TimeNumOffsetColonStr` from a string slice.
@@ -240,6 +248,7 @@ impl TimeNumOffsetColonStr {
         unsafe {
             // This is safe because `TimeNumOffsetColonStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -286,6 +295,7 @@ impl TimeNumOffsetColonStr {
             "TimeNumOffsetColonStr must always be 6 bytes"
         );
 
+        debug_assert_safe_version_ok!(<&[u8; NUM_OFFSET_LEN]>::try_from(&self.0));
         let ptr = self.0.as_ptr() as *const [u8; NUM_OFFSET_LEN];
         // This must be always safe because the length is already checked.
         unsafe { &*ptr }
@@ -340,6 +350,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     unsafe fn sign_byte_mut(&mut self) -> &mut u8 {
+        debug_assert_safe_version_some!(self.0.get(0));
         self.0.get_unchecked_mut(0)
     }
 
@@ -370,7 +381,7 @@ impl TimeNumOffsetColonStr {
             // and the substituted value (`byte`) is also an ASCII character.
             *self.sign_byte_mut() = byte;
         }
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
         debug_assert_eq!(self.sign(), sign);
     }
 
@@ -391,6 +402,7 @@ impl TimeNumOffsetColonStr {
         unsafe {
             // This is safe because the string is ASCII string and
             // `HOUR_ABS_RANGE` is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[HOUR_ABS_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(HOUR_ABS_RANGE))
         }
     }
@@ -412,6 +424,7 @@ impl TimeNumOffsetColonStr {
     pub fn hour_abs_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `HOUR_ABS_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[HOUR_ABS_RANGE]));
             let ptr = self.0.as_ptr().add(HOUR_ABS_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -427,6 +440,7 @@ impl TimeNumOffsetColonStr {
     #[must_use]
     unsafe fn hour_abs_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `HOUR_ABS_RANGE` fits inside the string.
+        debug_assert_ok!(<&[u8; 2]>::try_from(&self.0[HOUR_ABS_RANGE]));
         let ptr = self.0.as_mut_ptr().add(HOUR_ABS_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -477,7 +491,7 @@ impl TimeNumOffsetColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.hour_abs_bytes_mut_fixed_len(), hour_abs);
         }
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -499,6 +513,7 @@ impl TimeNumOffsetColonStr {
         unsafe {
             // This is safe because the string is ASCII string and
             // `HOUR_SIGNED_RANGE` is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[HOUR_SIGNED_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(HOUR_SIGNED_RANGE))
         }
     }
@@ -518,6 +533,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn hour_signed_bytes_fixed_len(&self) -> &[u8; 3] {
+        debug_assert_safe_version_ok!(<&[u8; 3]>::try_from(&self.0[HOUR_SIGNED_RANGE]));
         let ptr = self.0[HOUR_SIGNED_RANGE].as_ptr() as *const [u8; 3];
         // This must be always safe because the string is valid time-numoffset string.
         unsafe { &*ptr }
@@ -586,7 +602,7 @@ impl TimeNumOffsetColonStr {
     ) -> Result<(), Error> {
         self.set_hour_abs(hour_abs)?;
         self.set_sign(sign);
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -647,6 +663,7 @@ impl TimeNumOffsetColonStr {
         unsafe {
             // This is safe because the string is ASCII string and
             // `MINUTE_RANGE` is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[MINUTE_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(MINUTE_RANGE))
         }
     }
@@ -668,6 +685,7 @@ impl TimeNumOffsetColonStr {
     pub fn minute_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `MINUTE_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[MINUTE_RANGE]));
             let ptr = self.0.as_ptr().add(MINUTE_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -683,6 +701,7 @@ impl TimeNumOffsetColonStr {
     #[must_use]
     unsafe fn minute_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `MINUTE_RANGE` fits inside the string.
+        debug_assert_ok!(<&[u8; 2]>::try_from(&self.0[MINUTE_RANGE]));
         let ptr = self.0.as_mut_ptr().add(MINUTE_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -733,7 +752,7 @@ impl TimeNumOffsetColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -823,7 +842,7 @@ impl TimeNumOffsetColonStr {
             write_digit2(self.hour_abs_bytes_mut_fixed_len(), hour_abs);
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -882,7 +901,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a TimeNumOffsetColonStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid time-numoffset string is also an ASCII string.
-            TimeNumOffsetColonStr::from_bytes_unchecked(v)
+            TimeNumOffsetColonStr::from_bytes_maybe_unchecked(v)
         })
     }
 }
@@ -895,7 +914,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut TimeNumOffsetColonStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid time-numoffset string is also an ASCII string.
-            TimeNumOffsetColonStr::from_bytes_unchecked_mut(v)
+            TimeNumOffsetColonStr::from_bytes_maybe_unchecked_mut(v)
         })
     }
 }
@@ -917,7 +936,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut TimeNumOffsetColonStr {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
             // This is safe because a valid time-numoffset string is also an ASCII string.
-            TimeNumOffsetColonStr::from_str_unchecked_mut(v)
+            TimeNumOffsetColonStr::from_str_maybe_unchecked_mut(v)
         })
     }
 }
@@ -1002,7 +1021,8 @@ impl TimeNumOffsetColonString {
     /// `validate_bytes(&s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn new_unchecked(s: [u8; 6]) -> Self {
+    unsafe fn new_maybe_unchecked(s: [u8; 6]) -> Self {
+        debug_assert_ok!(validate_bytes(&s));
         Self(s)
     }
 
@@ -1026,7 +1046,8 @@ impl TimeNumOffsetColonString {
     pub fn as_deref(&self) -> &TimeNumOffsetColonStr {
         unsafe {
             // This is safe because `self.0` is valid time-numoffset string.
-            TimeNumOffsetColonStr::from_bytes_unchecked(&self.0)
+            debug_assert_ok!(TimeNumOffsetColonStr::from_bytes(&self.0));
+            TimeNumOffsetColonStr::from_bytes_maybe_unchecked(&self.0)
         }
     }
 
@@ -1050,7 +1071,8 @@ impl TimeNumOffsetColonString {
     pub fn as_deref_mut(&mut self) -> &mut TimeNumOffsetColonStr {
         unsafe {
             // This is safe because `self.0` is valid time-numoffset string.
-            TimeNumOffsetColonStr::from_bytes_unchecked_mut(&mut self.0)
+            debug_assert_ok!(TimeNumOffsetColonStr::from_bytes(&self.0));
+            TimeNumOffsetColonStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         }
     }
 }
@@ -1121,7 +1143,7 @@ impl From<&TimeNumOffsetColonStr> for TimeNumOffsetColonString {
     fn from(v: &TimeNumOffsetColonStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
-            Self::new_unchecked(*v.as_bytes_fixed_len())
+            Self::new_maybe_unchecked(*v.as_bytes_fixed_len())
         }
     }
 }
@@ -1152,7 +1174,7 @@ impl TryFrom<[u8; 6]> for TimeNumOffsetColonString {
         validate_bytes(&v)?;
         Ok(unsafe {
             // This is safe because the value is successfully validated.
-            Self::new_unchecked(v)
+            Self::new_maybe_unchecked(v)
         })
     }
 }

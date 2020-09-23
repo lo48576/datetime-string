@@ -49,12 +49,15 @@ pub struct SecfracDigitsString(Vec<u8>);
 impl SecfracDigitsString {
     /// Creates a `SecfracDigitsString` from the given bytes.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(&s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_bytes_unchecked(s: Vec<u8>) -> Self {
+    unsafe fn from_bytes_maybe_unchecked(s: Vec<u8>) -> Self {
+        debug_assert_ok!(validate_bytes(&s));
         Self(s)
     }
 
@@ -78,7 +81,8 @@ impl SecfracDigitsString {
     pub fn as_deref(&self) -> &SecfracDigitsStr {
         unsafe {
             // This is safe because `self.0` is already validated.
-            SecfracDigitsStr::from_bytes_unchecked(&self.0)
+            debug_assert_safe_version_ok!(SecfracDigitsStr::from_bytes(&self.0));
+            SecfracDigitsStr::from_bytes_maybe_unchecked(&self.0)
         }
     }
 
@@ -102,7 +106,8 @@ impl SecfracDigitsString {
     pub fn as_deref_mut(&mut self) -> &mut SecfracDigitsStr {
         unsafe {
             // This is safe because `self.0` is already validated.
-            SecfracDigitsStr::from_bytes_unchecked_mut(&mut self.0)
+            debug_assert_ok!(SecfracDigitsStr::from_bytes(&self.0));
+            SecfracDigitsStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         }
     }
 }
@@ -170,6 +175,7 @@ impl From<SecfracDigitsString> for String {
     fn from(v: SecfracDigitsString) -> String {
         unsafe {
             // This is safe because a valid `SecfracDigitsString` is an ASCII string.
+            debug_assert_ok!(str::from_utf8(&v.0));
             String::from_utf8_unchecked(v.0)
         }
     }
@@ -179,7 +185,8 @@ impl From<&SecfracDigitsStr> for SecfracDigitsString {
     fn from(v: &SecfracDigitsStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
-            Self::from_bytes_unchecked(v.as_bytes().into())
+            debug_assert_ok!(validate_bytes(&v.0));
+            Self::from_bytes_maybe_unchecked(v.0.into())
         }
     }
 }
@@ -210,7 +217,7 @@ impl TryFrom<Vec<u8>> for SecfracDigitsString {
         validate_bytes(&v)?;
         Ok(unsafe {
             // This is safe because the value is successfully validated.
-            Self::from_bytes_unchecked(v)
+            Self::from_bytes_maybe_unchecked(v)
         })
     }
 }

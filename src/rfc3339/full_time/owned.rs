@@ -47,25 +47,17 @@ use super::{validate_bytes, FullTimeStr};
 pub struct FullTimeString(Vec<u8>);
 
 impl FullTimeString {
-    /// Creates a `FullTimeString` from the given string.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(&s)` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_string_unchecked(s: String) -> Self {
-        Self(s.into_bytes())
-    }
-
     /// Creates a `FullTimeString` from the given bytes.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(&s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_bytes_unchecked(s: Vec<u8>) -> Self {
+    unsafe fn from_bytes_maybe_unchecked(s: Vec<u8>) -> Self {
+        debug_assert_ok!(validate_bytes(&s));
         Self(s)
     }
 
@@ -88,8 +80,9 @@ impl FullTimeString {
     #[must_use]
     pub fn as_deref(&self) -> &FullTimeStr {
         unsafe {
-            // This is safe because `self.0` is valid `hh:mm:ss` string.
-            FullTimeStr::from_bytes_unchecked(&self.0)
+            // This is safe because `self.0` is valid `full-time` string.
+            debug_assert_safe_version_ok!(FullTimeStr::from_bytes(&self.0));
+            FullTimeStr::from_bytes_maybe_unchecked(&self.0)
         }
     }
 
@@ -112,9 +105,10 @@ impl FullTimeString {
     #[must_use]
     pub fn as_deref_mut(&mut self) -> &mut FullTimeStr {
         unsafe {
+            debug_assert_ok!(FullTimeStr::from_bytes(&self.0));
             // This is safe because `self.0` is valid, and `FullTimeStr` ensures
             // that the underlying bytes are ASCII string after modification.
-            FullTimeStr::from_bytes_unchecked_mut(&mut self.0)
+            FullTimeStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         }
     }
 }
@@ -182,6 +176,7 @@ impl From<FullTimeString> for String {
     fn from(v: FullTimeString) -> String {
         unsafe {
             // This is safe because a valid `full-time` string is an ASCII string.
+            debug_assert_ok!(str::from_utf8(&v.0));
             String::from_utf8_unchecked(v.0)
         }
     }
@@ -191,7 +186,7 @@ impl From<&FullTimeStr> for FullTimeString {
     fn from(v: &FullTimeStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
-            Self::from_string_unchecked(v.as_str().into())
+            Self::from_bytes_maybe_unchecked(v.0.into())
         }
     }
 }
@@ -222,7 +217,7 @@ impl TryFrom<Vec<u8>> for FullTimeString {
         validate_bytes(&v)?;
         Ok(unsafe {
             // This is safe because the value is successfully validated.
-            Self::from_bytes_unchecked(v)
+            Self::from_bytes_maybe_unchecked(v)
         })
     }
 }
