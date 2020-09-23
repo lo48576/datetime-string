@@ -331,6 +331,158 @@ impl TimeOffsetStr {
             TimeNumOffsetStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         })
     }
+
+    /// Returns the absolute hour as an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let offset = TimeOffsetStr::from_str("-12:34")?;
+    /// assert_eq!(offset.hour_abs(), 12);
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert_eq!(zulu.hour_abs(), 0);
+    ///
+    /// let negative0 = TimeOffsetStr::from_str("-00:00")?;
+    /// assert_eq!(negative0.hour_abs(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn hour_abs(&self) -> u8 {
+        self.to_numoffset().map_or(0, |v| v.hour_abs())
+    }
+
+    /// Returns the signed hour as an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let offset = TimeOffsetStr::from_str("-12:34")?;
+    /// assert_eq!(offset.hour_signed(), -12);
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert_eq!(zulu.hour_signed(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    ///
+    /// Note that both `+00` and `-00` are treaded as the same 0.
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let positive = TimeOffsetStr::from_str("+00:59")?;
+    /// assert_eq!(positive.hour_signed(), 0);
+    ///
+    /// let negative = TimeOffsetStr::from_str("-00:59")?;
+    /// assert_eq!(negative.hour_signed(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn hour_signed(&self) -> i8 {
+        self.to_numoffset().map_or(0, |v| v.hour_signed())
+    }
+
+    /// Returns the minute as an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let offset = TimeOffsetStr::from_str("-12:34")?;
+    /// assert_eq!(offset.minute(), 34);
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert_eq!(zulu.minute(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn minute(&self) -> u8 {
+        self.to_numoffset().map_or(0, |v| v.minute())
+    }
+
+    /// Returns the time offset in minutes.
+    ///
+    /// Note that both `+00:00` and `-00:00` is considered as 0 minutes offset.
+    /// RFC 3339 defines semantics of `-00:00` as "unknown local offset".
+    /// If your application should be aware of that semantics, use
+    /// [`is_unknown_local_offset`] or [`sign`] to distinguish them.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let offset = TimeOffsetStr::from_str("-12:34")?;
+    /// assert_eq!(offset.in_minutes(), -(12 * 60 + 34));
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert_eq!(zulu.in_minutes(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    ///
+    /// `0` is returned for both `+00:00` and `-00:00`.
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// use datetime_string::common::TimeOffsetSign;
+    ///
+    /// let positive0 = TimeOffsetStr::from_str("+00:00")?;
+    /// assert_eq!(positive0.in_minutes(), 0);
+    /// assert_eq!(positive0.sign(), Some(TimeOffsetSign::Positive));
+    /// assert!(!positive0.is_unknown_local_offset(), "0 minutes time offset");
+    ///
+    /// let negative0 = TimeOffsetStr::from_str("-00:00")?;
+    /// assert_eq!(negative0.in_minutes(), 0);
+    /// assert_eq!(negative0.sign(), Some(TimeOffsetSign::Negative));
+    /// assert!(negative0.is_unknown_local_offset(), "unknown local offset");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn in_minutes(&self) -> i16 {
+        self.to_numoffset().map_or(0, |v| v.in_minutes())
+    }
+
+    /// Returns `true` if and only if the time offset means "unknown local offset" in RFC 3339.
+    ///
+    /// RFC 3339 defines `-00:00` as "unknown local offset".
+    ///
+    /// > If the time in UTC is known, but the offset to local time is unknown,
+    /// > this can be represented with an offset of "-00:00".
+    /// > This differs semantically from an offset of "Z" or "+00:00", which
+    /// > imply that UTC is the preferred reference point for the specified
+    /// > time.
+    /// >
+    /// > --- [RFC 3339, section 4.3. Unknown Local Offset Convention][rfc3339-4-3]
+    ///
+    /// This method returns `true` for `-00:00`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// use datetime_string::common::TimeOffsetSign;
+    ///
+    /// let positive0 = TimeOffsetStr::from_str("+00:00")?;
+    /// assert!(!positive0.is_unknown_local_offset(), "0 minutes time offset");
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert!(!zulu.is_unknown_local_offset(), "UTC");
+    ///
+    /// let negative0 = TimeOffsetStr::from_str("-00:00")?;
+    /// assert!(negative0.is_unknown_local_offset(), "unknown local offset");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    ///
+    /// [rfc3339-4-3]: https://tools.ietf.org/html/rfc3339#section-4.3
+    #[inline]
+    #[must_use]
+    pub fn is_unknown_local_offset(&self) -> bool {
+        &self.0 == b"-00:00"
+    }
 }
 
 impl AsRef<[u8]> for TimeOffsetStr {

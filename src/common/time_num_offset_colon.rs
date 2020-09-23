@@ -846,6 +846,129 @@ impl TimeNumOffsetColonStr {
 
         Ok(())
     }
+
+    /// Returns the time offset in minutes.
+    ///
+    /// Note that both `+00:00` and `-00:00` is considered as 0 minutes offset.
+    /// RFC 3339 defines semantics of `-00:00` as "unknown local offset".
+    /// If your application should be aware of that semantics, use
+    /// [`is_unknown_local_offset`] or [`sign`] to distinguish them.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let offset = TimeNumOffsetColonStr::from_str("-12:34")?;
+    ///
+    /// assert_eq!(offset.in_minutes(), -(12 * 60 + 34));
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    ///
+    /// `0` is returned for both `+00:00` and `-00:00`.
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// use datetime_string::common::TimeOffsetSign;
+    ///
+    /// let positive0 = TimeNumOffsetColonStr::from_str("+00:00")?;
+    /// assert_eq!(positive0.in_minutes(), 0);
+    /// assert_eq!(positive0.sign(), TimeOffsetSign::Positive);
+    /// assert!(!positive0.is_unknown_local_offset(), "0 minutes time offset");
+    ///
+    /// let negative0 = TimeNumOffsetColonStr::from_str("-00:00")?;
+    /// assert_eq!(negative0.in_minutes(), 0);
+    /// assert_eq!(negative0.sign(), TimeOffsetSign::Negative);
+    /// assert!(negative0.is_unknown_local_offset(), "unknown local offset");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[must_use]
+    pub fn in_minutes(&self) -> i16 {
+        let abs_min = self.hour_abs() as i16 * 60 + self.minute() as i16;
+        match self.sign() {
+            TimeOffsetSign::Positive => abs_min,
+            TimeOffsetSign::Negative => -abs_min,
+        }
+    }
+
+    /// Sets the time offset for the given offset in minutes.
+    ///
+    /// # Failures
+    ///
+    /// * Fails if the value is invalid as time offset, i.e. it is not between
+    ///   -1440 and 1440.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let mut buf: [u8; 6] = *b"-12:34";
+    /// let time = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
+    /// assert_eq!(time.as_str(), "-12:34");
+    ///
+    /// time.set_in_minutes(9 * 60)?;
+    /// assert_eq!(time.as_str(), "+09:00");
+    ///
+    /// time.set_in_minutes(0)?;
+    /// assert_eq!(time.as_str(), "+00:00");
+    ///
+    /// assert!(time.set_in_minutes(-24 * 60).is_err(), "-24:00 is invalid");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn set_in_minutes(&mut self, v: i16) -> Result<(), Error> {
+        /// Maximum allowed absolute value of minutes.
+        const IN_MINUTES_MAX: i16 = HOUR_MAX as i16 * 60 + MINUTE_MAX as i16;
+
+        if (v < -IN_MINUTES_MAX) || (v > IN_MINUTES_MAX) {
+            return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Offset).into());
+        }
+
+        let sign = if v < 0 {
+            TimeOffsetSign::Negative
+        } else {
+            TimeOffsetSign::Positive
+        };
+        // The valid time offset does not overflow on `.abs()`.
+        let v = v.abs();
+        let hour_abs = (v / 60) as u8;
+        let minute = (v % 60) as u8;
+
+        self.set_sign_and_time(sign, hour_abs, minute)
+    }
+
+    /// Returns `true` if and only if the time offset means "unknown local offset" in RFC 3339.
+    ///
+    /// RFC 3339 defines `-00:00` as "unknown local offset".
+    ///
+    /// > If the time in UTC is known, but the offset to local time is unknown,
+    /// > this can be represented with an offset of "-00:00".
+    /// > This differs semantically from an offset of "Z" or "+00:00", which
+    /// > imply that UTC is the preferred reference point for the specified
+    /// > time.
+    /// >
+    /// > --- [RFC 3339, section 4.3. Unknown Local Offset Convention][rfc3339-4-3]
+    ///
+    /// This method returns `true` for `-00:00`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// use datetime_string::common::TimeOffsetSign;
+    ///
+    /// let positive0 = TimeNumOffsetColonStr::from_str("+00:00")?;
+    /// assert!(!positive0.is_unknown_local_offset(), "0 minutes time offset");
+    ///
+    /// let negative0 = TimeNumOffsetColonStr::from_str("-00:00")?;
+    /// assert!(negative0.is_unknown_local_offset(), "unknown local offset");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    ///
+    /// [rfc3339-4-3]: https://tools.ietf.org/html/rfc3339#section-4.3
+    #[inline]
+    #[must_use]
+    pub fn is_unknown_local_offset(&self) -> bool {
+        &self.0 == b"-00:00"
+    }
 }
 
 #[cfg(feature = "alloc")]
