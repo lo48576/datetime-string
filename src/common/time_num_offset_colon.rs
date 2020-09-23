@@ -846,6 +846,41 @@ impl TimeNumOffsetColonStr {
 
         Ok(())
     }
+
+    /// Returns `true` if and only if the time offset means "unknown local offset" in RFC 3339.
+    ///
+    /// RFC 3339 defines `-00:00` as "unknown local offset".
+    ///
+    /// > If the time in UTC is known, but the offset to local time is unknown,
+    /// > this can be represented with an offset of "-00:00".
+    /// > This differs semantically from an offset of "Z" or "+00:00", which
+    /// > imply that UTC is the preferred reference point for the specified
+    /// > time.
+    /// >
+    /// > --- [RFC 3339, section 4.3. Unknown Local Offset Convention][rfc3339-4-3]
+    ///
+    /// This method returns `true` for `-00:00`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// use datetime_string::common::TimeOffsetSign;
+    ///
+    /// let positive0 = TimeNumOffsetColonStr::from_str("+00:00")?;
+    /// assert!(!positive0.is_unknown_local_offset(), "0 minutes time offset");
+    ///
+    /// let negative0 = TimeNumOffsetColonStr::from_str("-00:00")?;
+    /// assert!(negative0.is_unknown_local_offset(), "unknown local offset");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    ///
+    /// [rfc3339-4-3]: https://tools.ietf.org/html/rfc3339#section-4.3
+    #[inline]
+    #[must_use]
+    pub fn is_unknown_local_offset(&self) -> bool {
+        &self.0 == b"-00:00"
+    }
 }
 
 #[cfg(feature = "alloc")]
