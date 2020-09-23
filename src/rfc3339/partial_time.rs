@@ -7,9 +7,6 @@ mod owned;
 
 use core::{cmp::Ordering, convert::TryFrom, fmt, ops, str};
 
-#[cfg(feature = "serde")]
-use serde::Serialize;
-
 use crate::{
     common::Hms6ColonStr,
     error::{Error, ErrorKind},
@@ -49,14 +46,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct PartialTimeStr(str);
+pub struct PartialTimeStr([u8]);
 
 impl PartialTimeStr {
     /// Creates a `&PartialTimeStr` from the given byte slice.
@@ -67,7 +65,7 @@ impl PartialTimeStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
-        Self::from_str_unchecked(str::from_utf8_unchecked(s))
+        &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut PartialTimeStr` from the given mutable byte slice.
@@ -78,18 +76,7 @@ impl PartialTimeStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
-        Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
-    }
-
-    /// Creates a `&PartialTimeStr` from the given string slice.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const PartialTimeStr)
+        &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut PartialTimeStr` from the given mutable string slice.
@@ -100,7 +87,9 @@ impl PartialTimeStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut PartialTimeStr)
+        // This is safe because `PartialTimeStr` ensures that the underlying
+        // bytes are ASCII string after modification.
+        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&PartialTimeStr` from a string slice.
@@ -209,7 +198,11 @@ impl PartialTimeStr {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        unsafe {
+            // This is safe because the `PartialTimeStr` ensures that the
+            // underlying bytes are ASCII string.
+            str::from_utf8_unchecked(&self.0)
+        }
     }
 
     /// Returns a byte slice.
@@ -230,7 +223,7 @@ impl PartialTimeStr {
     #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+        &self.0
     }
 
     /// Returns a `hh:mm:ss` substring.
@@ -249,9 +242,7 @@ impl PartialTimeStr {
     pub fn hms(&self) -> &Hms6ColonStr {
         unsafe {
             // This is safe because a valid partial-time string has `hh:mm:ss` as a prefix.
-            Hms6ColonStr::from_bytes_unchecked(
-                self.0.as_bytes().get_unchecked(..PARTIAL_TIME_LEN_MIN),
-            )
+            Hms6ColonStr::from_bytes_unchecked(self.0.get_unchecked(..PARTIAL_TIME_LEN_MIN))
         }
     }
 
@@ -273,12 +264,10 @@ impl PartialTimeStr {
     #[must_use]
     pub fn hms_mut(&mut self) -> &mut Hms6ColonStr {
         unsafe {
-            // This is safe because a valid partial-time string has `hh:mm:ss` as a prefix.
-            Hms6ColonStr::from_bytes_unchecked_mut(
-                self.0
-                    .as_bytes_mut()
-                    .get_unchecked_mut(..PARTIAL_TIME_LEN_MIN),
-            )
+            // This is safe because a valid partial-time string has `hh:mm:ss`
+            // as a prefix, and `Hms6ColonStr` ensures that the underlying bytes
+            // are ASCII string after modification.
+            Hms6ColonStr::from_bytes_unchecked_mut(self.0.get_unchecked_mut(..PARTIAL_TIME_LEN_MIN))
         }
     }
 
@@ -298,7 +287,7 @@ impl PartialTimeStr {
     #[inline]
     #[must_use]
     pub fn secfrac(&self) -> Option<&SecfracStr> {
-        self.0.as_bytes().get(PARTIAL_TIME_LEN_MIN..).map(|v| {
+        self.0.get(PARTIAL_TIME_LEN_MIN..).map(|v| {
             unsafe {
                 // This is safe because a valid partial-time string which is longer than
                 // PARTIAL_TIME_LEN_MIN (== "hh:mm:ss".len()) has time-secfrac as a prefix.
@@ -329,9 +318,9 @@ impl PartialTimeStr {
         unsafe {
             // This is safe because a valid partial-time string which is longer than
             // PARTIAL_TIME_LEN_MIN (== "hh:mm:ss".len()) has time-secfrac as a prefix,
-            // and a partial-time string is also an ASCII string.
+            // and `SecfracStr` ensures that the underlying bytes are ASCII string
+            // after modification.
             self.0
-                .as_bytes_mut()
                 .get_mut(PARTIAL_TIME_LEN_MIN..)
                 .map(|v| SecfracStr::from_bytes_unchecked_mut(v))
         }
@@ -351,7 +340,7 @@ impl alloc::borrow::ToOwned for PartialTimeStr {
 impl AsRef<[u8]> for PartialTimeStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        self.as_bytes()
+        &self.0
     }
 }
 
@@ -407,11 +396,7 @@ impl<'a> TryFrom<&'a str> for &'a PartialTimeStr {
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
-        validate_bytes(v.as_bytes())?;
-        Ok(unsafe {
-            // This is safe because a valid `partial-time` string is also an ASCII string.
-            PartialTimeStr::from_str_unchecked(v)
-        })
+        Self::try_from(v.as_bytes())
     }
 }
 
@@ -422,7 +407,9 @@ impl<'a> TryFrom<&'a mut str> for &'a mut PartialTimeStr {
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
-            // This is safe because a valid `partial-time` string is also an ASCII string.
+            // This is safe because the string is already validated and
+            // `PartialTimeStr` ensures that the underlying bytes are ASCII
+            // string after modification.
             PartialTimeStr::from_str_unchecked_mut(v)
         })
     }
@@ -431,7 +418,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut PartialTimeStr {
 impl fmt::Display for PartialTimeStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.as_str().fmt(f)
     }
 }
 
@@ -440,7 +427,7 @@ impl ops::Deref for PartialTimeStr {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.as_str()
     }
 }
 
@@ -451,6 +438,16 @@ impl_cmp_symmetric!([u8], &PartialTimeStr, [u8]);
 impl_cmp_symmetric!(str, PartialTimeStr, str);
 impl_cmp_symmetric!(str, PartialTimeStr, &str);
 impl_cmp_symmetric!(str, &PartialTimeStr, str);
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for PartialTimeStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Items for serde support.
 #[cfg(feature = "serde")]
