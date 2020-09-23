@@ -42,14 +42,15 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
 /// [`full-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(transparent))]
+// Note that `derive(Serialize)` cannot used here, because it encodes this as
+// `[u8]` rather than as a string.
+//
 // Comparisons implemented for the type are consistent (at least it is intended to be so).
 // See <https://github.com/rust-lang/rust-clippy/issues/2025>.
 // Note that `clippy::derive_ord_xor_partial_ord` would be introduced since Rust 1.47.0.
 #[allow(clippy::derive_hash_xor_eq)]
 #[allow(clippy::unknown_clippy_lints, clippy::derive_ord_xor_partial_ord)]
-pub struct FullTimeStr(str);
+pub struct FullTimeStr([u8]);
 
 impl FullTimeStr {
     /// Creates a `&FullTimeStr` from the given byte slice.
@@ -60,7 +61,7 @@ impl FullTimeStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
-        Self::from_str_unchecked(str::from_utf8_unchecked(s))
+        &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut FullTimeStr` from the given mutable byte slice.
@@ -71,18 +72,7 @@ impl FullTimeStr {
     #[inline]
     #[must_use]
     pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
-        Self::from_str_unchecked_mut(str::from_utf8_unchecked_mut(s))
-    }
-
-    /// Creates a `&FullTimeStr` from the given string slice.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_str_unchecked(s: &str) -> &Self {
-        &*(s as *const str as *const FullTimeStr)
+        &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut FullTimeStr` from the given mutable string slice.
@@ -93,7 +83,9 @@ impl FullTimeStr {
     #[inline]
     #[must_use]
     unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
-        &mut *(s as *mut str as *mut FullTimeStr)
+        // This is safe because `FullTimeStr` ensures that the underlying
+        // bytes are ASCII string after modification.
+        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&FullTimeStr` from a string slice.
@@ -188,7 +180,11 @@ impl FullTimeStr {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        unsafe {
+            // This is safe because the `FullTimeStr` ensures that the
+            // underlying bytes are ASCII string.
+            str::from_utf8_unchecked(&self.0)
+        }
     }
 
     /// Returns a byte slice.
@@ -209,7 +205,7 @@ impl FullTimeStr {
     #[inline]
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+        &self.0
     }
 
     /// Returns the beginning position of the time offset substring.
@@ -218,7 +214,7 @@ impl FullTimeStr {
     fn offset_start_pos(&self) -> usize {
         let len = self.0.len();
         let len_1 = len - 1;
-        if self.0.as_bytes()[len_1] == b'Z' {
+        if self.0[len_1] == b'Z' {
             // Time offset is 'Z', which is 1 bytes.
             len_1
         } else {
@@ -245,7 +241,7 @@ impl FullTimeStr {
     #[must_use]
     pub fn decompose(&self) -> (&PartialTimeStr, &TimeOffsetStr) {
         let offset_start_pos = self.offset_start_pos();
-        let (partial_time, offset) = self.0.as_bytes().split_at(offset_start_pos);
+        let (partial_time, offset) = self.0.split_at(offset_start_pos);
 
         let partial_time = unsafe {
             // This is safe because a `full-time` string has a `partial-time`
@@ -286,16 +282,16 @@ impl FullTimeStr {
     #[must_use]
     pub fn decompose_mut(&mut self) -> (&mut PartialTimeStr, &mut TimeOffsetStr) {
         let offset_start_pos = self.offset_start_pos();
-        unsafe {
-            // This is safe because `&mut PartialTimeStr` and `&mut TimeOffsetStr`
-            // can only have ASCII strings.
-            let (partial_time, offset) = self.0.as_bytes_mut().split_at_mut(offset_start_pos);
+        let (partial_time, offset) = self.0.split_at_mut(offset_start_pos);
 
+        unsafe {
             // This is safe because a `full-time` string has a `partial-time`
-            // followed by `time-offset`.
+            // followed by `time-offset`, and `PartialTimeStr` ensures that the
+            // underlying bytes are ASCII string after modification.
             let partial_time = PartialTimeStr::from_bytes_unchecked_mut(partial_time);
             // This is safe because a `full-time` string has a `time-offset`
-            // suffix following `partial-time`.
+            // suffix following `partial-time`, and `TimeOffsetStr` ensures
+            // that the underlying bytes are ASCII string after modification.
             let offset = TimeOffsetStr::from_bytes_unchecked_mut(offset);
 
             (partial_time, offset)
@@ -322,7 +318,7 @@ impl FullTimeStr {
         debug_assert!(offset_start_pos < self.0.len());
         unsafe {
             // This is safe because `offset_start_pos` is always less than the string length.
-            let s = self.0.as_bytes().get_unchecked(..offset_start_pos);
+            let s = self.0.get_unchecked(..offset_start_pos);
             // This is safe because a `full-time` string has a `partial-time`
             // followed by `time-offset`.
             PartialTimeStr::from_bytes_unchecked(s)
@@ -355,9 +351,10 @@ impl FullTimeStr {
         debug_assert!(offset_start_pos < self.0.len());
         unsafe {
             // This is safe because `offset_start_pos` is always less than the string length.
-            let s = self.0.as_bytes_mut().get_unchecked_mut(..offset_start_pos);
+            let s = self.0.get_unchecked_mut(..offset_start_pos);
             // This is safe because a `full-time` string has a `partial-time`
-            // followed by `time-offset`.
+            // followed by `time-offset`, and `PartialTimeStr` ensures that the
+            // underlying bytes are ASCII string after modification.
             PartialTimeStr::from_bytes_unchecked_mut(s)
         }
     }
@@ -382,7 +379,7 @@ impl FullTimeStr {
         debug_assert!(offset_start_pos < self.0.len());
         unsafe {
             // This is safe because `offset_start_pos` is always less than the string length.
-            let s = self.0.as_bytes().get_unchecked(offset_start_pos..);
+            let s = self.0.get_unchecked(offset_start_pos..);
             // This is safe because a `full-time` string has a `time-offset`
             // suffix following `partial-time`.
             TimeOffsetStr::from_bytes_unchecked(s)
@@ -415,9 +412,10 @@ impl FullTimeStr {
         debug_assert!(offset_start_pos < self.0.len());
         unsafe {
             // This is safe because `offset_start_pos` is always less than the string length.
-            let s = self.0.as_bytes_mut().get_unchecked_mut(offset_start_pos..);
+            let s = self.0.get_unchecked_mut(offset_start_pos..);
             // This is safe because a `full-time` string has a `time-offset`
-            // suffix following `partial-time`.
+            // suffix following `partial-time`, and `TimeOffsetStr` ensures
+            // that the underlying bytes are ASCII string after modification.
             TimeOffsetStr::from_bytes_unchecked_mut(s)
         }
     }
@@ -492,11 +490,7 @@ impl<'a> TryFrom<&'a str> for &'a FullTimeStr {
 
     #[inline]
     fn try_from(v: &'a str) -> Result<Self, Self::Error> {
-        validate_bytes(v.as_bytes())?;
-        Ok(unsafe {
-            // This is safe because a valid `full-time` string is also an ASCII string.
-            FullTimeStr::from_str_unchecked(v)
-        })
+        Self::try_from(v.as_bytes())
     }
 }
 
@@ -507,7 +501,9 @@ impl<'a> TryFrom<&'a mut str> for &'a mut FullTimeStr {
     fn try_from(v: &'a mut str) -> Result<Self, Self::Error> {
         validate_bytes(v.as_bytes())?;
         Ok(unsafe {
-            // This is safe because a valid `full-time` string is also an ASCII string.
+            // This is safe because a valid `full-time` string is also an ASCII
+            // string, and `FullTimeStr` ensures that the value after
+            // modification is still an ASCII string.
             FullTimeStr::from_str_unchecked_mut(v)
         })
     }
@@ -516,7 +512,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut FullTimeStr {
 impl fmt::Display for FullTimeStr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.as_str().fmt(f)
     }
 }
 
@@ -525,7 +521,7 @@ impl ops::Deref for FullTimeStr {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.as_str()
     }
 }
 
@@ -536,6 +532,16 @@ impl_cmp_symmetric!([u8], &FullTimeStr, [u8]);
 impl_cmp_symmetric!(str, FullTimeStr, str);
 impl_cmp_symmetric!(str, FullTimeStr, &str);
 impl_cmp_symmetric!(str, &FullTimeStr, str);
+
+#[cfg(feature = "serde")]
+impl Serialize for FullTimeStr {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
 
 /// Items for serde support.
 #[cfg(feature = "serde")]
