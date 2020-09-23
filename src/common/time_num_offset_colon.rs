@@ -860,6 +860,13 @@ impl AsRef<TimeNumOffsetColonStr> for TimeNumOffsetColonStr {
     }
 }
 
+impl AsMut<TimeNumOffsetColonStr> for TimeNumOffsetColonStr {
+    #[inline]
+    fn as_mut(&mut self) -> &mut TimeNumOffsetColonStr {
+        self
+    }
+}
+
 impl<'a> From<&'a TimeNumOffsetColonStr> for &'a str {
     #[inline]
     fn from(v: &'a TimeNumOffsetColonStr) -> Self {
@@ -1079,6 +1086,13 @@ impl AsRef<str> for TimeNumOffsetColonString {
 impl AsRef<TimeNumOffsetColonStr> for TimeNumOffsetColonString {
     #[inline]
     fn as_ref(&self) -> &TimeNumOffsetColonStr {
+        self
+    }
+}
+
+impl AsMut<TimeNumOffsetColonStr> for TimeNumOffsetColonString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut TimeNumOffsetColonStr {
         self
     }
 }

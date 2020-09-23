@@ -353,6 +353,13 @@ impl AsRef<TimeOffsetStr> for TimeOffsetStr {
     }
 }
 
+impl AsMut<TimeOffsetStr> for TimeOffsetStr {
+    #[inline]
+    fn as_mut(&mut self) -> &mut TimeOffsetStr {
+        self
+    }
+}
+
 impl<'a> From<&'a TimeOffsetStr> for &'a str {
     #[inline]
     fn from(v: &'a TimeOffsetStr) -> Self {

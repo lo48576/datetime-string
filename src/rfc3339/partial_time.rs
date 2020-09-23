@@ -358,6 +358,13 @@ impl AsRef<PartialTimeStr> for PartialTimeStr {
     }
 }
 
+impl AsMut<PartialTimeStr> for PartialTimeStr {
+    #[inline]
+    fn as_mut(&mut self) -> &mut PartialTimeStr {
+        self
+    }
+}
+
 impl<'a> From<&'a PartialTimeStr> for &'a str {
     #[inline]
     fn from(v: &'a PartialTimeStr) -> Self {

@@ -155,6 +155,13 @@ impl AsRef<PartialTimeStr> for PartialTimeString {
     }
 }
 
+impl AsMut<PartialTimeStr> for PartialTimeString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut PartialTimeStr {
+        self
+    }
+}
+
 impl From<PartialTimeString> for Vec<u8> {
     #[inline]
     fn from(v: PartialTimeString) -> Vec<u8> {

@@ -823,6 +823,13 @@ impl AsRef<Ymd8HyphenStr> for Ymd8HyphenStr {
     }
 }
 
+impl AsMut<Ymd8HyphenStr> for Ymd8HyphenStr {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Ymd8HyphenStr {
+        self
+    }
+}
+
 impl<'a> From<&'a Ymd8HyphenStr> for &'a str {
     #[inline]
     fn from(v: &'a Ymd8HyphenStr) -> Self {
@@ -1043,6 +1050,13 @@ impl AsRef<str> for Ymd8HyphenString {
 impl AsRef<Ymd8HyphenStr> for Ymd8HyphenString {
     #[inline]
     fn as_ref(&self) -> &Ymd8HyphenStr {
+        self
+    }
+}
+
+impl AsMut<Ymd8HyphenStr> for Ymd8HyphenString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Ymd8HyphenStr {
         self
     }
 }

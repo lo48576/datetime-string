@@ -647,6 +647,13 @@ impl AsRef<SecfracDigitsStr> for SecfracDigitsStr {
     }
 }
 
+impl AsMut<SecfracDigitsStr> for SecfracDigitsStr {
+    #[inline]
+    fn as_mut(&mut self) -> &mut SecfracDigitsStr {
+        self
+    }
+}
+
 impl<'a> From<&'a SecfracDigitsStr> for &'a str {
     #[inline]
     fn from(v: &'a SecfracDigitsStr) -> Self {

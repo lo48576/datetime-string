@@ -443,6 +443,13 @@ impl AsRef<DateTimeStr> for DateTimeStr {
     }
 }
 
+impl AsMut<DateTimeStr> for DateTimeStr {
+    #[inline]
+    fn as_mut(&mut self) -> &mut DateTimeStr {
+        self
+    }
+}
+
 impl<'a> From<&'a DateTimeStr> for &'a str {
     #[inline]
     fn from(v: &'a DateTimeStr) -> Self {

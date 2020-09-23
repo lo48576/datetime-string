@@ -452,6 +452,13 @@ impl AsRef<FullTimeStr> for FullTimeStr {
     }
 }
 
+impl AsMut<FullTimeStr> for FullTimeStr {
+    #[inline]
+    fn as_mut(&mut self) -> &mut FullTimeStr {
+        self
+    }
+}
+
 impl<'a> From<&'a FullTimeStr> for &'a str {
     #[inline]
     fn from(v: &'a FullTimeStr) -> Self {

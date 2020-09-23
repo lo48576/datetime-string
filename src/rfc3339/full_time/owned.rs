@@ -154,6 +154,13 @@ impl AsRef<FullTimeStr> for FullTimeString {
     }
 }
 
+impl AsMut<FullTimeStr> for FullTimeString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut FullTimeStr {
+        self
+    }
+}
+
 impl From<FullTimeString> for Vec<u8> {
     #[inline]
     fn from(v: FullTimeString) -> Vec<u8> {

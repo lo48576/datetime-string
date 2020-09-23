@@ -142,6 +142,13 @@ impl AsRef<SecfracDigitsStr> for SecfracDigitsString {
     }
 }
 
+impl AsMut<SecfracDigitsStr> for SecfracDigitsString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut SecfracDigitsStr {
+        self
+    }
+}
+
 impl From<SecfracDigitsString> for Vec<u8> {
     #[inline]
     fn from(v: SecfracDigitsString) -> Vec<u8> {

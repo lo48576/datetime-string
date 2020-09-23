@@ -141,6 +141,13 @@ impl AsRef<TimeOffsetStr> for TimeOffsetString {
     }
 }
 
+impl AsMut<TimeOffsetStr> for TimeOffsetString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut TimeOffsetStr {
+        self
+    }
+}
+
 impl From<TimeOffsetString> for Vec<u8> {
     #[inline]
     fn from(v: TimeOffsetString) -> Vec<u8> {
