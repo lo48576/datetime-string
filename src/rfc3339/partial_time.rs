@@ -271,7 +271,7 @@ impl PartialTimeStr {
             // This is safe because a valid partial-time string has `hh:mm:ss`
             // as a prefix, and `Hms6ColonStr` ensures that the underlying bytes
             // are ASCII string after modification.
-            debug_assert!(Hms6ColonStr::from_bytes(&self.0[..PARTIAL_TIME_LEN_MIN]).is_ok());
+            debug_assert_ok!(Hms6ColonStr::from_bytes(&self.0[..PARTIAL_TIME_LEN_MIN]));
             Hms6ColonStr::from_bytes_unchecked_mut(self.0.get_unchecked_mut(..PARTIAL_TIME_LEN_MIN))
         }
     }

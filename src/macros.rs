@@ -15,6 +15,29 @@ macro_rules! debug_assert_safe_version_ok {
     };
 }
 
+/// Asserts that the expression must return `Ok(_)`.
+macro_rules! debug_assert_ok {
+    ($result:expr) => {
+        if cfg!(debug_assertions) {
+            if let core::result::Result::Err(e) = $result {
+                panic!("Assertion failed (expr = {}): {}", stringify!($result), e);
+            }
+        }
+    };
+    ($result:expr, $($arg:tt)+) => {
+        if cfg!(debug_assertions) {
+            if let core::result::Result::Err(e) = $result {
+                panic!(
+                    "Assertion failed: {} (expr = {}): {}",
+                    format_args!("{}", $($arg)+),
+                    stringify!($result),
+                    e
+                );
+            }
+        }
+    };
+}
+
 /// Asserts that the safe alternative should return `Some(_)`.
 macro_rules! debug_assert_safe_version_some {
     ($opt:expr) => {

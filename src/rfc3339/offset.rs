@@ -319,7 +319,7 @@ impl TimeOffsetStr {
             // the string is already checked that not being "Z", and
             // `TimeNumOffsetStr` ensures that the underlying bytes are ASCII
             // string after modification.
-            debug_assert!(TimeNumOffsetStr::from_bytes(&self.0).is_ok());
+            debug_assert_ok!(TimeNumOffsetStr::from_bytes(&self.0));
             TimeNumOffsetStr::from_bytes_unchecked_mut(&mut self.0)
         })
     }

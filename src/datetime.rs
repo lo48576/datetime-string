@@ -1,5 +1,7 @@
 //! Datetime-related utilities.
 
+use core::fmt;
+
 /// Year-month-mday validation error.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum DateError {
@@ -7,6 +9,17 @@ pub(crate) enum DateError {
     MonthOutOfRange,
     /// Day of month is out of range.
     MdayOutOfRange,
+}
+
+impl fmt::Display for DateError {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let msg = match self {
+            Self::MonthOutOfRange => "Month is out of range",
+            Self::MdayOutOfRange => "Day of month is out of range",
+        };
+        f.write_str(msg)
+    }
 }
 
 /// Validates the given year, month, and day of month.

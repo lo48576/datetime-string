@@ -103,7 +103,7 @@ impl SecfracString {
     pub fn as_deref_mut(&mut self) -> &mut SecfracStr {
         unsafe {
             // This is safe because `self.0` should be already validated.
-            debug_assert!(SecfracStr::from_bytes(&self.0).is_ok());
+            debug_assert_ok!(SecfracStr::from_bytes(&self.0));
             SecfracStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
@@ -172,7 +172,7 @@ impl From<SecfracString> for String {
     fn from(v: SecfracString) -> String {
         unsafe {
             // This is safe because a valid `SecfracDigitsString` is an ASCII string.
-            debug_assert!(str::from_utf8(&v.0).is_ok());
+            debug_assert_ok!(str::from_utf8(&v.0));
             String::from_utf8_unchecked(v.0)
         }
     }
@@ -182,7 +182,7 @@ impl From<&SecfracStr> for SecfracString {
     fn from(v: &SecfracStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
-            debug_assert!(validate_bytes(&v.0).is_ok());
+            debug_assert_ok!(validate_bytes(&v.0));
             Self::from_bytes_unchecked(v.0.into())
         }
     }

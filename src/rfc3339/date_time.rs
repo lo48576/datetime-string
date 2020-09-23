@@ -286,8 +286,8 @@ impl DateTimeStr {
     #[inline]
     #[must_use]
     pub fn decompose_mut(&mut self) -> (&mut FullDateStr, &mut FullTimeStr) {
-        debug_assert!(<FullDateStr>::from_bytes(&self.0[..T_POS]).is_ok());
-        debug_assert!(<FullTimeStr>::from_bytes(&self.0[(T_POS + 1)..]).is_ok());
+        debug_assert_ok!(<FullDateStr>::from_bytes(&self.0[..T_POS]));
+        debug_assert_ok!(<FullTimeStr>::from_bytes(&self.0[(T_POS + 1)..]));
 
         unsafe {
             let (date, t_time) = self.0.split_at_mut(T_POS);
@@ -353,7 +353,7 @@ impl DateTimeStr {
     #[must_use]
     pub fn date_mut(&mut self) -> &mut FullDateStr {
         unsafe {
-            debug_assert!(FullDateStr::from_bytes(&self.0[DATE_RANGE]).is_ok());
+            debug_assert_ok!(FullDateStr::from_bytes(&self.0[DATE_RANGE]));
             // This is safe because the range is valid for the shortest possible
             // string, and `FullDateStr` ensures that the underlying bytes are
             // ASCII string after modification.
@@ -411,7 +411,7 @@ impl DateTimeStr {
     #[must_use]
     pub fn time_mut(&mut self) -> &mut FullTimeStr {
         unsafe {
-            debug_assert!(FullTimeStr::from_bytes(&self.0[TIME_RANGE]).is_ok());
+            debug_assert_ok!(FullTimeStr::from_bytes(&self.0[TIME_RANGE]));
             // This is safe because the range is valid for the shortest possible
             // string, and `FullTimeStr` ensures that the underlying bytes are
             // ASCII string after modification.

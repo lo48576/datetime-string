@@ -559,7 +559,7 @@ impl Hms6ColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.hour_bytes_mut_fixed_len(), hour);
         }
-        debug_assert!(validate_bytes(&self.0).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -592,7 +592,7 @@ impl Hms6ColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
-        debug_assert!(validate_bytes(&self.0).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -625,7 +625,7 @@ impl Hms6ColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.second_bytes_mut_fixed_len(), second);
         }
-        debug_assert!(validate_bytes(&self.0).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -662,7 +662,7 @@ impl Hms6ColonStr {
             write_digit2(self.hour_bytes_mut_fixed_len(), hour);
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
-        debug_assert!(validate_bytes(&self.0).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -699,7 +699,7 @@ impl Hms6ColonStr {
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
             write_digit2(self.second_bytes_mut_fixed_len(), second);
         }
-        debug_assert!(validate_bytes(&self.0).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -740,7 +740,7 @@ impl Hms6ColonStr {
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
             write_digit2(self.second_bytes_mut_fixed_len(), second);
         }
-        debug_assert!(validate_bytes(&self.0).is_ok());
+        debug_assert_ok!(validate_bytes(&self.0));
 
         Ok(())
     }
@@ -944,6 +944,7 @@ impl Hms6ColonString {
     pub fn as_deref(&self) -> &Hms6ColonStr {
         unsafe {
             // This is safe because the string is already validated.
+            debug_assert_safe_version_ok!(Hms6ColonStr::from_bytes(&self.0));
             Hms6ColonStr::from_bytes_unchecked(&self.0)
         }
     }
@@ -967,6 +968,7 @@ impl Hms6ColonString {
     pub fn as_deref_mut(&mut self) -> &mut Hms6ColonStr {
         unsafe {
             // This is safe because the string is already validated.
+            debug_assert_ok!(Hms6ColonStr::from_bytes(&self.0));
             Hms6ColonStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }

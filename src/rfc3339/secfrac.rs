@@ -272,7 +272,7 @@ impl SecfracStr {
             // This is safe because a `SecfracStr` string is an ASCII string,
             // and `SecfracDigitsStr` ensures that the underlying bytes are
             // also ASCII string after modification.
-            debug_assert!(SecfracDigitsStr::from_bytes(&self.0[DIGITS_RANGE]).is_ok());
+            debug_assert_ok!(SecfracDigitsStr::from_bytes(&self.0[DIGITS_RANGE]));
             SecfracDigitsStr::from_bytes_unchecked_mut(self.0.get_unchecked_mut(DIGITS_RANGE))
         }
     }

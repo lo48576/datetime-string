@@ -341,7 +341,7 @@ impl Ymd8HyphenStr {
     #[must_use]
     unsafe fn year_bytes_mut_fixed_len(&mut self) -> &mut [u8; 4] {
         // This is safe because `YEAR_RANGE` fits inside the string.
-        debug_assert!(<&[u8; 4]>::try_from(&self.0[YEAR_RANGE]).is_ok());
+        debug_assert_ok!(<&[u8; 4]>::try_from(&self.0[YEAR_RANGE]));
         let ptr = self.0.as_mut_ptr().add(YEAR_RANGE.start) as *mut [u8; 4];
         &mut *ptr
     }
@@ -418,7 +418,7 @@ impl Ymd8HyphenStr {
     #[must_use]
     unsafe fn month_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `MONTH_RANGE` fits inside the string.
-        debug_assert!(<&[u8; 2]>::try_from(&self.0[MONTH_RANGE]).is_ok());
+        debug_assert_ok!(<&[u8; 2]>::try_from(&self.0[MONTH_RANGE]));
         let ptr = self.0.as_mut_ptr().add(MONTH_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -512,7 +512,7 @@ impl Ymd8HyphenStr {
     #[must_use]
     unsafe fn mday_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `MDAY_RANGE` fits inside the string.
-        debug_assert!(<&[u8; 2]>::try_from(&self.0[MDAY_RANGE]).is_ok());
+        debug_assert_ok!(<&[u8; 2]>::try_from(&self.0[MDAY_RANGE]));
         let ptr = self.0.as_mut_ptr().add(MDAY_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -565,9 +565,9 @@ impl Ymd8HyphenStr {
             write_digit4(self.year_bytes_mut_fixed_len(), year);
         }
 
-        debug_assert!(validate_bytes(&self.0).is_ok());
-        debug_assert!(
-            validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
+        debug_assert_ok!(validate_bytes(&self.0));
+        debug_assert_ok!(
+            validate_ym1d(self.year(), self.month1(), self.mday()),
             "Date should be valid after modification"
         );
         Ok(())
@@ -603,9 +603,9 @@ impl Ymd8HyphenStr {
             write_digit2(self.month_bytes_mut_fixed_len(), month0.wrapping_add(1));
         }
 
-        debug_assert!(validate_bytes(&self.0).is_ok());
-        debug_assert!(
-            validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
+        debug_assert_ok!(validate_bytes(&self.0));
+        debug_assert_ok!(
+            validate_ym1d(self.year(), self.month1(), self.mday()),
             "Date should be valid after modification"
         );
         Ok(())
@@ -663,9 +663,9 @@ impl Ymd8HyphenStr {
             write_digit2(self.mday_bytes_mut_fixed_len(), mday);
         }
 
-        debug_assert!(validate_bytes(&self.0).is_ok());
-        debug_assert!(
-            validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
+        debug_assert_ok!(validate_bytes(&self.0));
+        debug_assert_ok!(
+            validate_ym1d(self.year(), self.month1(), self.mday()),
             "Date should be valid after modification"
         );
         Ok(())
@@ -699,9 +699,9 @@ impl Ymd8HyphenStr {
             write_digit2(self.mday_bytes_mut_fixed_len(), mday);
         }
 
-        debug_assert!(validate_bytes(&self.0).is_ok());
-        debug_assert!(
-            validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
+        debug_assert_ok!(validate_bytes(&self.0));
+        debug_assert_ok!(
+            validate_ym1d(self.year(), self.month1(), self.mday()),
             "Date should be valid after modification"
         );
         Ok(())
@@ -735,9 +735,9 @@ impl Ymd8HyphenStr {
             write_digit2(self.mday_bytes_mut_fixed_len(), mday);
         }
 
-        debug_assert!(validate_bytes(&self.0).is_ok());
-        debug_assert!(
-            validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
+        debug_assert_ok!(validate_bytes(&self.0));
+        debug_assert_ok!(
+            validate_ym1d(self.year(), self.month1(), self.mday()),
             "Date should be valid after modification"
         );
         Ok(())
@@ -774,9 +774,9 @@ impl Ymd8HyphenStr {
             write_digit2(self.mday_bytes_mut_fixed_len(), mday);
         }
 
-        debug_assert!(validate_bytes(&self.0).is_ok());
-        debug_assert!(
-            validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
+        debug_assert_ok!(validate_bytes(&self.0));
+        debug_assert_ok!(
+            validate_ym1d(self.year(), self.month1(), self.mday()),
             "Date should be valid after modification"
         );
         Ok(())
@@ -1007,6 +1007,7 @@ impl Ymd8HyphenString {
     pub fn as_deref(&self) -> &Ymd8HyphenStr {
         unsafe {
             // This is safe because `self.0` is valid RFC 3339 `full-date` string.
+            debug_assert_ok!(Ymd8HyphenStr::from_bytes(&self.0));
             Ymd8HyphenStr::from_bytes_unchecked(&self.0)
         }
     }
@@ -1031,6 +1032,7 @@ impl Ymd8HyphenString {
     pub fn as_deref_mut(&mut self) -> &mut Ymd8HyphenStr {
         unsafe {
             // This is safe because `self.0` is valid RFC 3339 `full-date` string.
+            debug_assert_ok!(Ymd8HyphenStr::from_bytes(&self.0));
             Ymd8HyphenStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
