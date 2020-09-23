@@ -47,17 +47,6 @@ use super::{validate_bytes, SecfracStr};
 pub struct SecfracString(Vec<u8>);
 
 impl SecfracString {
-    /// Creates a `SecfracString` from the given string.
-    ///
-    /// # Safety
-    ///
-    /// `validate_bytes(&s)` should return `Ok(())`.
-    #[inline]
-    #[must_use]
-    unsafe fn from_string_unchecked(s: String) -> Self {
-        Self(s.into_bytes())
-    }
-
     /// Creates a `SecfracString` from the given bytes.
     ///
     /// # Safety
@@ -190,7 +179,7 @@ impl From<&SecfracStr> for SecfracString {
     fn from(v: &SecfracStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
-            Self::from_string_unchecked(v.as_str().into())
+            Self::from_bytes_unchecked(v.0.into())
         }
     }
 }
