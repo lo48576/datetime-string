@@ -1,6 +1,8 @@
 # datetime-string
 
 [![Build Status](https://gitlab.com/lo48576/datetime-string/badges/develop/pipeline.svg)](https://gitlab.com/lo48576/datetime-string/pipelines/)
+[![Latest version](https://img.shields.io/crates/v/datetime-string.svg)](https://crates.io/crates/datetime-string)
+[![Documentation](https://docs.rs/datetime-string/badge.svg)](https://docs.rs/datetime-string)
 ![Minimum supported rustc version: 1.46](https://img.shields.io/badge/rustc-1.46+-lightgray.svg)
 
 Datetime string types.
