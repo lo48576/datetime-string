@@ -132,6 +132,15 @@ impl core::borrow::BorrowMut<SecfracStr> for SecfracString {
     }
 }
 
+impl alloc::borrow::ToOwned for SecfracStr {
+    type Owned = SecfracString;
+
+    #[inline]
+    fn to_owned(&self) -> Self::Owned {
+        self.into()
+    }
+}
+
 impl AsRef<[u8]> for SecfracString {
     #[inline]
     fn as_ref(&self) -> &[u8] {

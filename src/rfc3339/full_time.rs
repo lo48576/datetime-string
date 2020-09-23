@@ -421,16 +421,6 @@ impl FullTimeStr {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl alloc::borrow::ToOwned for FullTimeStr {
-    type Owned = FullTimeString;
-
-    #[inline]
-    fn to_owned(&self) -> Self::Owned {
-        self.into()
-    }
-}
-
 impl AsRef<[u8]> for FullTimeStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {

@@ -356,16 +356,6 @@ impl SecfracStr {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl alloc::borrow::ToOwned for SecfracStr {
-    type Owned = SecfracString;
-
-    #[inline]
-    fn to_owned(&self) -> Self::Owned {
-        self.into()
-    }
-}
-
 impl AsRef<[u8]> for SecfracStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {

@@ -134,6 +134,15 @@ impl core::borrow::BorrowMut<PartialTimeStr> for PartialTimeString {
     }
 }
 
+impl alloc::borrow::ToOwned for PartialTimeStr {
+    type Owned = PartialTimeString;
+
+    #[inline]
+    fn to_owned(&self) -> Self::Owned {
+        self.into()
+    }
+}
+
 impl AsRef<[u8]> for PartialTimeString {
     #[inline]
     fn as_ref(&self) -> &[u8] {

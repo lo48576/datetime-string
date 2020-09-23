@@ -121,6 +121,15 @@ impl core::borrow::BorrowMut<SecfracDigitsStr> for SecfracDigitsString {
     }
 }
 
+impl alloc::borrow::ToOwned for SecfracDigitsStr {
+    type Owned = SecfracDigitsString;
+
+    #[inline]
+    fn to_owned(&self) -> Self::Owned {
+        self.into()
+    }
+}
+
 impl AsRef<[u8]> for SecfracDigitsString {
     #[inline]
     fn as_ref(&self) -> &[u8] {
