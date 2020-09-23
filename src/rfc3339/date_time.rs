@@ -412,16 +412,6 @@ impl DateTimeStr {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl alloc::borrow::ToOwned for DateTimeStr {
-    type Owned = DateTimeString;
-
-    #[inline]
-    fn to_owned(&self) -> Self::Owned {
-        self.into()
-    }
-}
-
 impl AsRef<[u8]> for DateTimeStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {

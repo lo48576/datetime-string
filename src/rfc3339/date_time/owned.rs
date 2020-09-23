@@ -122,6 +122,15 @@ impl core::borrow::BorrowMut<DateTimeStr> for DateTimeString {
     }
 }
 
+impl alloc::borrow::ToOwned for DateTimeStr {
+    type Owned = DateTimeString;
+
+    #[inline]
+    fn to_owned(&self) -> Self::Owned {
+        self.into()
+    }
+}
+
 impl AsRef<[u8]> for DateTimeString {
     #[inline]
     fn as_ref(&self) -> &[u8] {

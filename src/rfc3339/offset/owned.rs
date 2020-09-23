@@ -120,6 +120,15 @@ impl core::borrow::BorrowMut<TimeOffsetStr> for TimeOffsetString {
     }
 }
 
+impl alloc::borrow::ToOwned for TimeOffsetStr {
+    type Owned = TimeOffsetString;
+
+    #[inline]
+    fn to_owned(&self) -> Self::Owned {
+        self.into()
+    }
+}
+
 impl AsRef<[u8]> for TimeOffsetString {
     #[inline]
     fn as_ref(&self) -> &[u8] {

@@ -133,6 +133,15 @@ impl core::borrow::BorrowMut<FullTimeStr> for FullTimeString {
     }
 }
 
+impl alloc::borrow::ToOwned for FullTimeStr {
+    type Owned = FullTimeString;
+
+    #[inline]
+    fn to_owned(&self) -> Self::Owned {
+        self.into()
+    }
+}
+
 impl AsRef<[u8]> for FullTimeString {
     #[inline]
     fn as_ref(&self) -> &[u8] {

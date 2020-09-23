@@ -322,16 +322,6 @@ impl TimeOffsetStr {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl alloc::borrow::ToOwned for TimeOffsetStr {
-    type Owned = TimeOffsetString;
-
-    #[inline]
-    fn to_owned(&self) -> Self::Owned {
-        self.into()
-    }
-}
-
 impl AsRef<[u8]> for TimeOffsetStr {
     #[inline]
     fn as_ref(&self) -> &[u8] {
