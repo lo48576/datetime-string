@@ -59,37 +59,45 @@ pub struct PartialTimeStr([u8]);
 impl PartialTimeStr {
     /// Creates a `&PartialTimeStr` from the given byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked(s: &[u8]) -> &Self {
+        debug_assert_ok!(validate_bytes(s));
         &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut PartialTimeStr` from the given mutable byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked_mut(s: &mut [u8]) -> &mut Self {
+        debug_assert_ok!(validate_bytes(s));
         &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut PartialTimeStr` from the given mutable string slice.
+    ///
+    /// This performs assertion in debug build, but not in release build.
     ///
     /// # Safety
     ///
     /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
+    unsafe fn from_str_maybe_unchecked_mut(s: &mut str) -> &mut Self {
         // This is safe because `PartialTimeStr` ensures that the underlying
         // bytes are ASCII string after modification.
-        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
+        Self::from_bytes_maybe_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&PartialTimeStr` from a string slice.
@@ -246,7 +254,7 @@ impl PartialTimeStr {
             debug_assert_safe_version_ok!(Hms6ColonStr::from_bytes(
                 &self.0[..PARTIAL_TIME_LEN_MIN]
             ));
-            Hms6ColonStr::from_bytes_unchecked(self.0.get_unchecked(..PARTIAL_TIME_LEN_MIN))
+            Hms6ColonStr::from_bytes_maybe_unchecked(self.0.get_unchecked(..PARTIAL_TIME_LEN_MIN))
         }
     }
 
@@ -272,7 +280,9 @@ impl PartialTimeStr {
             // as a prefix, and `Hms6ColonStr` ensures that the underlying bytes
             // are ASCII string after modification.
             debug_assert_ok!(Hms6ColonStr::from_bytes(&self.0[..PARTIAL_TIME_LEN_MIN]));
-            Hms6ColonStr::from_bytes_unchecked_mut(self.0.get_unchecked_mut(..PARTIAL_TIME_LEN_MIN))
+            Hms6ColonStr::from_bytes_maybe_unchecked_mut(
+                self.0.get_unchecked_mut(..PARTIAL_TIME_LEN_MIN),
+            )
         }
     }
 
@@ -297,7 +307,7 @@ impl PartialTimeStr {
                 // This is safe because a valid partial-time string which is longer than
                 // PARTIAL_TIME_LEN_MIN (== "hh:mm:ss".len()) has time-secfrac as a prefix.
                 debug_assert_safe_version_ok!(SecfracStr::from_bytes(v));
-                SecfracStr::from_bytes_unchecked(v)
+                SecfracStr::from_bytes_maybe_unchecked(v)
             }
         })
     }
@@ -333,7 +343,7 @@ impl PartialTimeStr {
                 .transpose());
             self.0
                 .get_mut(PARTIAL_TIME_LEN_MIN..)
-                .map(|v| SecfracStr::from_bytes_unchecked_mut(v))
+                .map(|v| SecfracStr::from_bytes_maybe_unchecked_mut(v))
         }
     }
 }
@@ -381,7 +391,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a PartialTimeStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `partial-time` string is also an ASCII string.
-            PartialTimeStr::from_bytes_unchecked(v)
+            PartialTimeStr::from_bytes_maybe_unchecked(v)
         })
     }
 }
@@ -394,7 +404,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut PartialTimeStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `partial-time` string is also an ASCII string.
-            PartialTimeStr::from_bytes_unchecked_mut(v)
+            PartialTimeStr::from_bytes_maybe_unchecked_mut(v)
         })
     }
 }
@@ -418,7 +428,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut PartialTimeStr {
             // This is safe because the string is already validated and
             // `PartialTimeStr` ensures that the underlying bytes are ASCII
             // string after modification.
-            PartialTimeStr::from_str_unchecked_mut(v)
+            PartialTimeStr::from_str_maybe_unchecked_mut(v)
         })
     }
 }

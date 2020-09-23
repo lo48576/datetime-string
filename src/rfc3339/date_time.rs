@@ -74,37 +74,45 @@ pub struct DateTimeStr([u8]);
 impl DateTimeStr {
     /// Creates a `&DateTimeStr` from the given byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
+    unsafe fn from_bytes_maybe_unchecked(s: &[u8]) -> &Self {
+        debug_assert_ok!(validate_bytes(s));
         &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut DateTimeStr` from the given mutable byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
+    unsafe fn from_bytes_maybe_unchecked_mut(s: &mut [u8]) -> &mut Self {
+        debug_assert_ok!(validate_bytes(s));
         &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut DateTimeStr` from the given mutable string slice.
+    ///
+    /// This performs assertion in debug build, but not in release build.
     ///
     /// # Safety
     ///
     /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
+    unsafe fn from_str_maybe_unchecked_mut(s: &mut str) -> &mut Self {
         // This is safe because `DateTimeStr` ensures that the underlying
         // bytes are ASCII string after modification.
-        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
+        Self::from_bytes_maybe_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&DateTimeStr` from a string slice.
@@ -249,14 +257,14 @@ impl DateTimeStr {
             // This is safe because `DATE_RANGE` fits inside the string, and a
             // `date-time` string has a `full-date` followed by 'T' and `full-time`.
             debug_assert_safe_version_ok!(<FullDateStr>::from_bytes(&self.0[DATE_RANGE]));
-            FullDateStr::from_bytes_unchecked(self.0.get_unchecked(DATE_RANGE))
+            FullDateStr::from_bytes_maybe_unchecked(self.0.get_unchecked(DATE_RANGE))
         };
         let time = unsafe {
             // This is safe because `TIME_RANGE` fits inside the string, and a
             // `date-time` string has a `full-time` suffix following `full-date`
             // and 'T'.
             debug_assert_safe_version_ok!(<FullTimeStr>::from_bytes(&self.0[TIME_RANGE]));
-            FullTimeStr::from_bytes_unchecked(self.0.get_unchecked(TIME_RANGE))
+            FullTimeStr::from_bytes_maybe_unchecked(self.0.get_unchecked(TIME_RANGE))
         };
 
         (date, time)
@@ -297,11 +305,11 @@ impl DateTimeStr {
             // This is safe because a `date-time` string has a `full-date`
             // followed by 'T' and `full-time`, and `FullDateStr` ensures that
             // the underlying bytes are ASCII string after modification.
-            let date = FullDateStr::from_bytes_unchecked_mut(date);
+            let date = FullDateStr::from_bytes_maybe_unchecked_mut(date);
             // This is safe because a `date-time` string has a `full-time`
             // suffix following `full-date` and 'T', and `FullTimeStr` ensures
             // that the underlying bytes are ASCII string after modification.
-            let time = FullTimeStr::from_bytes_unchecked_mut(time);
+            let time = FullTimeStr::from_bytes_maybe_unchecked_mut(time);
 
             (date, time)
         }
@@ -328,7 +336,7 @@ impl DateTimeStr {
             // This is safe because the range is valid for the shortest possible string.
             let s = self.0.get_unchecked(DATE_RANGE);
             // This is safe because a `date-time` string has a `full-date` before "T".
-            FullDateStr::from_bytes_unchecked(s)
+            FullDateStr::from_bytes_maybe_unchecked(s)
         }
     }
 
@@ -359,7 +367,7 @@ impl DateTimeStr {
             // ASCII string after modification.
             let s = self.0.get_unchecked_mut(DATE_RANGE);
             // This is safe because a `date-time` string has a `partial-time` before "T".
-            FullDateStr::from_bytes_unchecked_mut(s)
+            FullDateStr::from_bytes_maybe_unchecked_mut(s)
         }
     }
 
@@ -384,7 +392,7 @@ impl DateTimeStr {
             // This is safe because the range is valid for the shortest possible string.
             let s = self.0.get_unchecked(TIME_RANGE);
             // This is safe because a `date-time` string has a `time-offset` right after "T".
-            FullTimeStr::from_bytes_unchecked(s)
+            FullTimeStr::from_bytes_maybe_unchecked(s)
         }
     }
 
@@ -417,7 +425,7 @@ impl DateTimeStr {
             // ASCII string after modification.
             let s = self.0.get_unchecked_mut(TIME_RANGE);
             // This is safe because a `date-time` string has a `time-offset` right after "T".
-            FullTimeStr::from_bytes_unchecked_mut(s)
+            FullTimeStr::from_bytes_maybe_unchecked_mut(s)
         }
     }
 }
@@ -465,7 +473,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a DateTimeStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `date-time` string is also an ASCII string.
-            DateTimeStr::from_bytes_unchecked(v)
+            DateTimeStr::from_bytes_maybe_unchecked(v)
         })
     }
 }
@@ -478,7 +486,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut DateTimeStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `date-time` string is also an ASCII string.
-            DateTimeStr::from_bytes_unchecked_mut(v)
+            DateTimeStr::from_bytes_maybe_unchecked_mut(v)
         })
     }
 }
@@ -502,7 +510,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut DateTimeStr {
             // This is safe because the string is already validated and
             // `DateTimeStr` ensures that the underlying bytes are ASCII
             // string after modification.
-            DateTimeStr::from_str_unchecked_mut(v)
+            DateTimeStr::from_str_maybe_unchecked_mut(v)
         })
     }
 }

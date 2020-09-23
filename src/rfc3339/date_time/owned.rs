@@ -50,12 +50,15 @@ pub struct DateTimeString(Vec<u8>);
 impl DateTimeString {
     /// Creates a `DateTimeString` from the given bytes.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(&s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_bytes_unchecked(s: Vec<u8>) -> Self {
+    unsafe fn from_bytes_maybe_unchecked(s: Vec<u8>) -> Self {
+        debug_assert_ok!(validate_bytes(&s));
         Self(s)
     }
 
@@ -80,7 +83,7 @@ impl DateTimeString {
         unsafe {
             // This is safe because `self.0` is already validated.
             debug_assert_safe_version_ok!(DateTimeStr::from_bytes(&self.0));
-            DateTimeStr::from_bytes_unchecked(&self.0)
+            DateTimeStr::from_bytes_maybe_unchecked(&self.0)
         }
     }
 
@@ -105,7 +108,7 @@ impl DateTimeString {
         unsafe {
             // This is safe because `self.0` is already validated.
             debug_assert_ok!(DateTimeStr::from_bytes(&self.0));
-            DateTimeStr::from_bytes_unchecked_mut(&mut self.0)
+            DateTimeStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         }
     }
 }
@@ -184,7 +187,7 @@ impl From<&DateTimeStr> for DateTimeString {
         debug_assert_ok!(validate_bytes(&v.0));
         unsafe {
             // This is safe because the value is already validated.
-            Self::from_bytes_unchecked(v.0.into())
+            Self::from_bytes_maybe_unchecked(v.0.into())
         }
     }
 }
@@ -215,7 +218,7 @@ impl TryFrom<Vec<u8>> for DateTimeString {
         validate_bytes(&v)?;
         Ok(unsafe {
             // This is safe because the value is successfully validated.
-            Self::from_bytes_unchecked(v)
+            Self::from_bytes_maybe_unchecked(v)
         })
     }
 }

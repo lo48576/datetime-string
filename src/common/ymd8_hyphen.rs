@@ -95,37 +95,45 @@ pub struct Ymd8HyphenStr([u8]);
 impl Ymd8HyphenStr {
     /// Creates a `&Ymd8HyphenStr` from the given byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked(s: &[u8]) -> &Self {
+        debug_assert_ok!(validate_bytes(s));
         &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut Ymd8HyphenStr` from the given mutable byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked_mut(s: &mut [u8]) -> &mut Self {
+        debug_assert_ok!(validate_bytes(s));
         &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut Ymd8HyphenStr` from the given mutable string slice.
+    ///
+    /// This performs assertion in debug build, but not in release build.
     ///
     /// # Safety
     ///
     /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
+    unsafe fn from_str_maybe_unchecked_mut(s: &mut str) -> &mut Self {
         // This is safe because `Hms6ColonStr` ensures that the underlying bytes
         // are ASCII string after modification.
-        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
+        Self::from_bytes_maybe_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&Ymd8HyphenStr` from a string slice.
@@ -862,7 +870,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a Ymd8HyphenStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
-            Ymd8HyphenStr::from_bytes_unchecked(v)
+            Ymd8HyphenStr::from_bytes_maybe_unchecked(v)
         })
     }
 }
@@ -875,7 +883,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut Ymd8HyphenStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid RFC 3339 `full-date` string is also an ASCII string.
-            Ymd8HyphenStr::from_bytes_unchecked_mut(v)
+            Ymd8HyphenStr::from_bytes_maybe_unchecked_mut(v)
         })
     }
 }
@@ -898,7 +906,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut Ymd8HyphenStr {
         Ok(unsafe {
             // This is safe because the value is successfully validated, and
             // `Ymd8HyphenStr` ensures the value after modification is an ASCII string.
-            Ymd8HyphenStr::from_str_unchecked_mut(v)
+            Ymd8HyphenStr::from_str_maybe_unchecked_mut(v)
         })
     }
 }
@@ -983,7 +991,8 @@ impl Ymd8HyphenString {
     /// `validate_bytes(&s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn new_unchecked(s: [u8; 10]) -> Self {
+    unsafe fn new_maybe_unchecked(s: [u8; 10]) -> Self {
+        debug_assert_ok!(validate_bytes(&s));
         Self(s)
     }
 
@@ -1008,7 +1017,7 @@ impl Ymd8HyphenString {
         unsafe {
             // This is safe because `self.0` is valid RFC 3339 `full-date` string.
             debug_assert_ok!(Ymd8HyphenStr::from_bytes(&self.0));
-            Ymd8HyphenStr::from_bytes_unchecked(&self.0)
+            Ymd8HyphenStr::from_bytes_maybe_unchecked(&self.0)
         }
     }
 
@@ -1033,7 +1042,7 @@ impl Ymd8HyphenString {
         unsafe {
             // This is safe because `self.0` is valid RFC 3339 `full-date` string.
             debug_assert_ok!(Ymd8HyphenStr::from_bytes(&self.0));
-            Ymd8HyphenStr::from_bytes_unchecked_mut(&mut self.0)
+            Ymd8HyphenStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         }
     }
 }
@@ -1104,7 +1113,7 @@ impl From<&Ymd8HyphenStr> for Ymd8HyphenString {
     fn from(v: &Ymd8HyphenStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
-            Self::new_unchecked(*v.as_bytes_fixed_len())
+            Self::new_maybe_unchecked(*v.as_bytes_fixed_len())
         }
     }
 }
@@ -1135,7 +1144,7 @@ impl TryFrom<[u8; 10]> for Ymd8HyphenString {
         validate_bytes(&v)?;
         Ok(unsafe {
             // This is safe because the value is successfully validated.
-            Self::new_unchecked(v)
+            Self::new_maybe_unchecked(v)
         })
     }
 }

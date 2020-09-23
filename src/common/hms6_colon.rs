@@ -111,37 +111,45 @@ pub struct Hms6ColonStr([u8]);
 impl Hms6ColonStr {
     /// Creates a `&Hms6ColonStr` from the given byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked(v: &[u8]) -> &Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked(v: &[u8]) -> &Self {
+        debug_assert_ok!(validate_bytes(v));
         &*(v as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut Hms6ColonStr` from the given mutable byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked_mut(s: &mut [u8]) -> &mut Self {
+        debug_assert_ok!(validate_bytes(s));
         &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut Hms6ColonStr` from the given mutable string slice.
+    ///
+    /// This performs assertion in debug build, but not in release build.
     ///
     /// # Safety
     ///
     /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
+    unsafe fn from_str_maybe_unchecked_mut(s: &mut str) -> &mut Self {
         // This is safe because `Hms6ColonStr` ensures that the underlying bytes
         // are ASCII string after modification.
-        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
+        Self::from_bytes_maybe_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&Hms6ColonStr` from a string slice.
@@ -799,7 +807,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a Hms6ColonStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because the value is successfully validated.
-            Hms6ColonStr::from_bytes_unchecked(v)
+            Hms6ColonStr::from_bytes_maybe_unchecked(v)
         })
     }
 }
@@ -812,7 +820,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut Hms6ColonStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because the value is successfully validated.
-            Hms6ColonStr::from_bytes_unchecked_mut(v)
+            Hms6ColonStr::from_bytes_maybe_unchecked_mut(v)
         })
     }
 }
@@ -835,7 +843,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut Hms6ColonStr {
         Ok(unsafe {
             // This is safe because the value is successfully validated, and
             // `Hms6ColonStr` ensures the value after modification is an ASCII string.
-            Hms6ColonStr::from_str_unchecked_mut(v)
+            Hms6ColonStr::from_str_maybe_unchecked_mut(v)
         })
     }
 }
@@ -921,7 +929,8 @@ impl Hms6ColonString {
     /// `validate_bytes(&s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn new_unchecked(s: [u8; 8]) -> Self {
+    unsafe fn new_maybe_unchecked(s: [u8; 8]) -> Self {
+        debug_assert_ok!(validate_bytes(&s));
         Self(s)
     }
 
@@ -945,7 +954,7 @@ impl Hms6ColonString {
         unsafe {
             // This is safe because the string is already validated.
             debug_assert_safe_version_ok!(Hms6ColonStr::from_bytes(&self.0));
-            Hms6ColonStr::from_bytes_unchecked(&self.0)
+            Hms6ColonStr::from_bytes_maybe_unchecked(&self.0)
         }
     }
 
@@ -969,7 +978,7 @@ impl Hms6ColonString {
         unsafe {
             // This is safe because the string is already validated.
             debug_assert_ok!(Hms6ColonStr::from_bytes(&self.0));
-            Hms6ColonStr::from_bytes_unchecked_mut(&mut self.0)
+            Hms6ColonStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         }
     }
 }
@@ -1040,7 +1049,7 @@ impl From<&Hms6ColonStr> for Hms6ColonString {
     fn from(v: &Hms6ColonStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
-            Self::new_unchecked(*v.as_bytes_fixed_len())
+            Self::new_maybe_unchecked(*v.as_bytes_fixed_len())
         }
     }
 }
@@ -1071,7 +1080,7 @@ impl TryFrom<[u8; 8]> for Hms6ColonString {
         validate_bytes(&v)?;
         Ok(unsafe {
             // This is safe because the value is successfully validated.
-            Self::new_unchecked(v)
+            Self::new_maybe_unchecked(v)
         })
     }
 }

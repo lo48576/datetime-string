@@ -55,37 +55,45 @@ pub struct FullTimeStr([u8]);
 impl FullTimeStr {
     /// Creates a `&FullTimeStr` from the given byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked(s: &[u8]) -> &Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked(s: &[u8]) -> &Self {
+        debug_assert_ok!(validate_bytes(s));
         &*(s as *const [u8] as *const Self)
     }
 
     /// Creates a `&mut FullTimeStr` from the given mutable byte slice.
     ///
+    /// This performs assertion in debug build, but not in release build.
+    ///
     /// # Safety
     ///
     /// `validate_bytes(s)` should return `Ok(())`.
     #[inline]
     #[must_use]
-    pub(crate) unsafe fn from_bytes_unchecked_mut(s: &mut [u8]) -> &mut Self {
+    pub(crate) unsafe fn from_bytes_maybe_unchecked_mut(s: &mut [u8]) -> &mut Self {
+        debug_assert_ok!(validate_bytes(s));
         &mut *(s as *mut [u8] as *mut Self)
     }
 
     /// Creates a `&mut FullTimeStr` from the given mutable string slice.
+    ///
+    /// This performs assertion in debug build, but not in release build.
     ///
     /// # Safety
     ///
     /// `validate_bytes(s.as_bytes())` should return `Ok(())`.
     #[inline]
     #[must_use]
-    unsafe fn from_str_unchecked_mut(s: &mut str) -> &mut Self {
+    unsafe fn from_str_maybe_unchecked_mut(s: &mut str) -> &mut Self {
         // This is safe because `FullTimeStr` ensures that the underlying
         // bytes are ASCII string after modification.
-        Self::from_bytes_unchecked_mut(s.as_bytes_mut())
+        Self::from_bytes_maybe_unchecked_mut(s.as_bytes_mut())
     }
 
     /// Creates a new `&FullTimeStr` from a string slice.
@@ -252,13 +260,13 @@ impl FullTimeStr {
             // This is safe because a `full-time` string has a `partial-time`
             // followed by `time-offset`.
             debug_assert_safe_version_ok!(PartialTimeStr::from_bytes(partial_time));
-            PartialTimeStr::from_bytes_unchecked(partial_time)
+            PartialTimeStr::from_bytes_maybe_unchecked(partial_time)
         };
         let offset = unsafe {
             // This is safe because a `full-time` string has a `time-offset`
             // suffix following `partial-time`.
             debug_assert_safe_version_ok!(TimeOffsetStr::from_bytes(offset));
-            TimeOffsetStr::from_bytes_unchecked(offset)
+            TimeOffsetStr::from_bytes_maybe_unchecked(offset)
         };
 
         (partial_time, offset)
@@ -301,11 +309,11 @@ impl FullTimeStr {
             // This is safe because a `full-time` string has a `partial-time`
             // followed by `time-offset`, and `PartialTimeStr` ensures that the
             // underlying bytes are ASCII string after modification.
-            let partial_time = PartialTimeStr::from_bytes_unchecked_mut(partial_time);
+            let partial_time = PartialTimeStr::from_bytes_maybe_unchecked_mut(partial_time);
             // This is safe because a `full-time` string has a `time-offset`
             // suffix following `partial-time`, and `TimeOffsetStr` ensures
             // that the underlying bytes are ASCII string after modification.
-            let offset = TimeOffsetStr::from_bytes_unchecked_mut(offset);
+            let offset = TimeOffsetStr::from_bytes_maybe_unchecked_mut(offset);
 
             (partial_time, offset)
         }
@@ -335,7 +343,7 @@ impl FullTimeStr {
             let s = self.0.get_unchecked(..offset_start_pos);
             // This is safe because a `full-time` string has a `partial-time`
             // followed by `time-offset`.
-            PartialTimeStr::from_bytes_unchecked(s)
+            PartialTimeStr::from_bytes_maybe_unchecked(s)
         }
     }
 
@@ -370,7 +378,7 @@ impl FullTimeStr {
             // This is safe because a `full-time` string has a `partial-time`
             // followed by `time-offset`, and `PartialTimeStr` ensures that the
             // underlying bytes are ASCII string after modification.
-            PartialTimeStr::from_bytes_unchecked_mut(s)
+            PartialTimeStr::from_bytes_maybe_unchecked_mut(s)
         }
     }
 
@@ -398,7 +406,7 @@ impl FullTimeStr {
             let s = self.0.get_unchecked(offset_start_pos..);
             // This is safe because a `full-time` string has a `time-offset`
             // suffix following `partial-time`.
-            TimeOffsetStr::from_bytes_unchecked(s)
+            TimeOffsetStr::from_bytes_maybe_unchecked(s)
         }
     }
 
@@ -433,7 +441,7 @@ impl FullTimeStr {
             // This is safe because a `full-time` string has a `time-offset`
             // suffix following `partial-time`, and `TimeOffsetStr` ensures
             // that the underlying bytes are ASCII string after modification.
-            TimeOffsetStr::from_bytes_unchecked_mut(s)
+            TimeOffsetStr::from_bytes_maybe_unchecked_mut(s)
         }
     }
 }
@@ -481,7 +489,7 @@ impl<'a> TryFrom<&'a [u8]> for &'a FullTimeStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `full-time` string is also an ASCII string.
-            FullTimeStr::from_bytes_unchecked(v)
+            FullTimeStr::from_bytes_maybe_unchecked(v)
         })
     }
 }
@@ -494,7 +502,7 @@ impl<'a> TryFrom<&'a mut [u8]> for &'a mut FullTimeStr {
         validate_bytes(v)?;
         Ok(unsafe {
             // This is safe because a valid `full-time` string is also an ASCII string.
-            FullTimeStr::from_bytes_unchecked_mut(v)
+            FullTimeStr::from_bytes_maybe_unchecked_mut(v)
         })
     }
 }
@@ -518,7 +526,7 @@ impl<'a> TryFrom<&'a mut str> for &'a mut FullTimeStr {
             // This is safe because a valid `full-time` string is also an ASCII
             // string, and `FullTimeStr` ensures that the value after
             // modification is still an ASCII string.
-            FullTimeStr::from_str_unchecked_mut(v)
+            FullTimeStr::from_str_maybe_unchecked_mut(v)
         })
     }
 }
