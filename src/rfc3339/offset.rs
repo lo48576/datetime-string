@@ -331,6 +331,78 @@ impl TimeOffsetStr {
             TimeNumOffsetStr::from_bytes_maybe_unchecked_mut(&mut self.0)
         })
     }
+
+    /// Returns the absolute hour as an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let offset = TimeOffsetStr::from_str("-12:34")?;
+    /// assert_eq!(offset.hour_abs(), 12);
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert_eq!(zulu.hour_abs(), 0);
+    ///
+    /// let negative0 = TimeOffsetStr::from_str("-00:00")?;
+    /// assert_eq!(negative0.hour_abs(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn hour_abs(&self) -> u8 {
+        self.to_numoffset().map_or(0, |v| v.hour_abs())
+    }
+
+    /// Returns the signed hour as an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let offset = TimeOffsetStr::from_str("-12:34")?;
+    /// assert_eq!(offset.hour_signed(), -12);
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert_eq!(zulu.hour_signed(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    ///
+    /// Note that both `+00` and `-00` are treaded as the same 0.
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let positive = TimeOffsetStr::from_str("+00:59")?;
+    /// assert_eq!(positive.hour_signed(), 0);
+    ///
+    /// let negative = TimeOffsetStr::from_str("-00:59")?;
+    /// assert_eq!(negative.hour_signed(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn hour_signed(&self) -> i8 {
+        self.to_numoffset().map_or(0, |v| v.hour_signed())
+    }
+
+    /// Returns the minute as an integer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetStr;
+    /// let offset = TimeOffsetStr::from_str("-12:34")?;
+    /// assert_eq!(offset.minute(), 34);
+    ///
+    /// let zulu = TimeOffsetStr::from_str("Z")?;
+    /// assert_eq!(zulu.minute(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn minute(&self) -> u8 {
+        self.to_numoffset().map_or(0, |v| v.minute())
+    }
 }
 
 impl AsRef<[u8]> for TimeOffsetStr {
