@@ -202,6 +202,7 @@ impl DateTimeStr {
         unsafe {
             // This is safe because the `SecfracDigitsStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -247,12 +248,14 @@ impl DateTimeStr {
         let date = unsafe {
             // This is safe because `DATE_RANGE` fits inside the string, and a
             // `date-time` string has a `full-date` followed by 'T' and `full-time`.
+            debug_assert_safe_version_ok!(<FullDateStr>::from_bytes(&self.0[DATE_RANGE]));
             FullDateStr::from_bytes_unchecked(self.0.get_unchecked(DATE_RANGE))
         };
         let time = unsafe {
             // This is safe because `TIME_RANGE` fits inside the string, and a
             // `date-time` string has a `full-time` suffix following `full-date`
             // and 'T'.
+            debug_assert_safe_version_ok!(<FullTimeStr>::from_bytes(&self.0[TIME_RANGE]));
             FullTimeStr::from_bytes_unchecked(self.0.get_unchecked(TIME_RANGE))
         };
 
@@ -283,6 +286,9 @@ impl DateTimeStr {
     #[inline]
     #[must_use]
     pub fn decompose_mut(&mut self) -> (&mut FullDateStr, &mut FullTimeStr) {
+        debug_assert!(<FullDateStr>::from_bytes(&self.0[..T_POS]).is_ok());
+        debug_assert!(<FullTimeStr>::from_bytes(&self.0[(T_POS + 1)..]).is_ok());
+
         unsafe {
             let (date, t_time) = self.0.split_at_mut(T_POS);
             // Note that `t_time` contains the separator "T" as a prefix.
@@ -318,6 +324,7 @@ impl DateTimeStr {
     #[must_use]
     pub fn date(&self) -> &FullDateStr {
         unsafe {
+            debug_assert_safe_version_ok!(FullDateStr::from_bytes(&self.0[DATE_RANGE]));
             // This is safe because the range is valid for the shortest possible string.
             let s = self.0.get_unchecked(DATE_RANGE);
             // This is safe because a `date-time` string has a `full-date` before "T".
@@ -346,6 +353,7 @@ impl DateTimeStr {
     #[must_use]
     pub fn date_mut(&mut self) -> &mut FullDateStr {
         unsafe {
+            debug_assert!(FullDateStr::from_bytes(&self.0[DATE_RANGE]).is_ok());
             // This is safe because the range is valid for the shortest possible
             // string, and `FullDateStr` ensures that the underlying bytes are
             // ASCII string after modification.
@@ -372,6 +380,7 @@ impl DateTimeStr {
     #[must_use]
     pub fn time(&self) -> &FullTimeStr {
         unsafe {
+            debug_assert_safe_version_ok!(FullTimeStr::from_bytes(&self.0[TIME_RANGE]));
             // This is safe because the range is valid for the shortest possible string.
             let s = self.0.get_unchecked(TIME_RANGE);
             // This is safe because a `date-time` string has a `time-offset` right after "T".
@@ -402,6 +411,7 @@ impl DateTimeStr {
     #[must_use]
     pub fn time_mut(&mut self) -> &mut FullTimeStr {
         unsafe {
+            debug_assert!(FullTimeStr::from_bytes(&self.0[TIME_RANGE]).is_ok());
             // This is safe because the range is valid for the shortest possible
             // string, and `FullTimeStr` ensures that the underlying bytes are
             // ASCII string after modification.

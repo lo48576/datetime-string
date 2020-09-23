@@ -77,7 +77,8 @@ impl FullTimeString {
     #[must_use]
     pub fn as_deref(&self) -> &FullTimeStr {
         unsafe {
-            // This is safe because `self.0` is valid `hh:mm:ss` string.
+            // This is safe because `self.0` is valid `full-time` string.
+            debug_assert_safe_version_ok!(FullTimeStr::from_bytes(&self.0));
             FullTimeStr::from_bytes_unchecked(&self.0)
         }
     }
@@ -101,6 +102,7 @@ impl FullTimeString {
     #[must_use]
     pub fn as_deref_mut(&mut self) -> &mut FullTimeStr {
         unsafe {
+            debug_assert!(FullTimeStr::from_bytes(&self.0).is_ok());
             // This is safe because `self.0` is valid, and `FullTimeStr` ensures
             // that the underlying bytes are ASCII string after modification.
             FullTimeStr::from_bytes_unchecked_mut(&mut self.0)
@@ -171,6 +173,7 @@ impl From<FullTimeString> for String {
     fn from(v: FullTimeString) -> String {
         unsafe {
             // This is safe because a valid `full-time` string is an ASCII string.
+            debug_assert!(str::from_utf8(&v.0).is_ok());
             String::from_utf8_unchecked(v.0)
         }
     }

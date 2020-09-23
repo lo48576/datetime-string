@@ -206,6 +206,7 @@ impl TimeOffsetStr {
         unsafe {
             // This is safe because the `TimeOffsetStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -251,7 +252,7 @@ impl TimeOffsetStr {
     /// ```
     #[inline]
     pub fn sign(&self) -> Option<TimeOffsetSign> {
-        match self.as_bytes()[0] {
+        match self.0[0] {
             b'Z' => None,
             b'+' => Some(TimeOffsetSign::Positive),
             v => {
@@ -282,6 +283,7 @@ impl TimeOffsetStr {
         Some(unsafe {
             // This is safe because `time-offset` is "Z" or `time-numoffset`,
             // and the string is already checked that not being "Z".
+            debug_assert_safe_version_ok!(TimeNumOffsetStr::from_bytes(&self.0));
             TimeNumOffsetStr::from_bytes_unchecked(&self.0)
         })
     }
@@ -317,6 +319,7 @@ impl TimeOffsetStr {
             // the string is already checked that not being "Z", and
             // `TimeNumOffsetStr` ensures that the underlying bytes are ASCII
             // string after modification.
+            debug_assert!(TimeNumOffsetStr::from_bytes(&self.0).is_ok());
             TimeNumOffsetStr::from_bytes_unchecked_mut(&mut self.0)
         })
     }

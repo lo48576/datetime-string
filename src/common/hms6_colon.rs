@@ -251,6 +251,7 @@ impl Hms6ColonStr {
         unsafe {
             // This is safe because the `Hms6ColonStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -293,6 +294,7 @@ impl Hms6ColonStr {
     pub fn as_bytes_fixed_len(&self) -> &[u8; 8] {
         debug_assert_eq!(self.len(), HMS_LEN, "Hms6ColonStr must always be 8 bytes");
 
+        debug_assert_safe_version_ok!(<&[u8; 8]>::try_from(&self.0[..HMS_LEN]));
         let ptr = self.0.as_ptr() as *const [u8; HMS_LEN];
         // This must be always safe because the length is already checked.
         unsafe { &*ptr }
@@ -315,6 +317,7 @@ impl Hms6ColonStr {
         unsafe {
             // This is safe because the string is ASCII string and `HOUR_RANGE`
             // is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[HOUR_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(HOUR_RANGE))
         }
     }
@@ -336,6 +339,7 @@ impl Hms6ColonStr {
     pub fn hour_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `HOUR_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[HOUR_RANGE]));
             let ptr = self.0.as_ptr().add(HOUR_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -351,6 +355,7 @@ impl Hms6ColonStr {
     #[must_use]
     unsafe fn hour_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `HOUR_RANGE` fits inside the string.
+        debug_assert_safe_version_ok!(<&mut [u8; 2]>::try_from(&mut self.0[HOUR_RANGE]));
         let ptr = self.0.as_mut_ptr().add(HOUR_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -389,6 +394,7 @@ impl Hms6ColonStr {
         unsafe {
             // This is safe because the string is ASCII string and `MINUTE_RANGE`
             // is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[MINUTE_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(MINUTE_RANGE))
         }
     }
@@ -410,6 +416,7 @@ impl Hms6ColonStr {
     pub fn minute_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `MINUTE_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[MINUTE_RANGE]));
             let ptr = self.0.as_ptr().add(MINUTE_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -425,6 +432,7 @@ impl Hms6ColonStr {
     #[must_use]
     unsafe fn minute_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `MINUTE_RANGE` fits inside the string.
+        debug_assert_safe_version_ok!(<&mut [u8; 2]>::try_from(&mut self.0[MINUTE_RANGE]));
         let ptr = self.0.as_mut_ptr().add(MINUTE_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -463,6 +471,7 @@ impl Hms6ColonStr {
         unsafe {
             // This is safe because the string is ASCII string and `SECOND_RANGE`
             // is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[SECOND_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(SECOND_RANGE))
         }
     }
@@ -484,6 +493,7 @@ impl Hms6ColonStr {
     pub fn second_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `SECOND_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[SECOND_RANGE]));
             let ptr = self.0.as_ptr().add(SECOND_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -499,6 +509,7 @@ impl Hms6ColonStr {
     #[must_use]
     unsafe fn second_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `SECOND_RANGE` fits inside the string.
+        debug_assert_safe_version_ok!(<&mut [u8; 2]>::try_from(&mut self.0[SECOND_RANGE]));
         let ptr = self.0.as_mut_ptr().add(SECOND_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -548,6 +559,7 @@ impl Hms6ColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.hour_bytes_mut_fixed_len(), hour);
         }
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }
@@ -580,6 +592,7 @@ impl Hms6ColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }
@@ -612,6 +625,7 @@ impl Hms6ColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.second_bytes_mut_fixed_len(), second);
         }
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }
@@ -648,6 +662,7 @@ impl Hms6ColonStr {
             write_digit2(self.hour_bytes_mut_fixed_len(), hour);
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }
@@ -684,6 +699,7 @@ impl Hms6ColonStr {
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
             write_digit2(self.second_bytes_mut_fixed_len(), second);
         }
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }
@@ -724,6 +740,7 @@ impl Hms6ColonStr {
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
             write_digit2(self.second_bytes_mut_fixed_len(), second);
         }
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }

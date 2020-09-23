@@ -240,6 +240,7 @@ impl TimeNumOffsetColonStr {
         unsafe {
             // This is safe because `TimeNumOffsetColonStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -286,6 +287,7 @@ impl TimeNumOffsetColonStr {
             "TimeNumOffsetColonStr must always be 6 bytes"
         );
 
+        debug_assert_safe_version_ok!(<&[u8; NUM_OFFSET_LEN]>::try_from(&self.0));
         let ptr = self.0.as_ptr() as *const [u8; NUM_OFFSET_LEN];
         // This must be always safe because the length is already checked.
         unsafe { &*ptr }
@@ -340,6 +342,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     unsafe fn sign_byte_mut(&mut self) -> &mut u8 {
+        debug_assert_safe_version_some!(self.0.get(0));
         self.0.get_unchecked_mut(0)
     }
 
@@ -370,7 +373,7 @@ impl TimeNumOffsetColonStr {
             // and the substituted value (`byte`) is also an ASCII character.
             *self.sign_byte_mut() = byte;
         }
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert!(validate_bytes(&self.0).is_ok());
         debug_assert_eq!(self.sign(), sign);
     }
 
@@ -391,6 +394,7 @@ impl TimeNumOffsetColonStr {
         unsafe {
             // This is safe because the string is ASCII string and
             // `HOUR_ABS_RANGE` is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[HOUR_ABS_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(HOUR_ABS_RANGE))
         }
     }
@@ -412,6 +416,7 @@ impl TimeNumOffsetColonStr {
     pub fn hour_abs_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `HOUR_ABS_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[HOUR_ABS_RANGE]));
             let ptr = self.0.as_ptr().add(HOUR_ABS_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -427,6 +432,7 @@ impl TimeNumOffsetColonStr {
     #[must_use]
     unsafe fn hour_abs_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `HOUR_ABS_RANGE` fits inside the string.
+        debug_assert!(<&[u8; 2]>::try_from(&self.0[HOUR_ABS_RANGE]).is_ok());
         let ptr = self.0.as_mut_ptr().add(HOUR_ABS_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -477,7 +483,7 @@ impl TimeNumOffsetColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.hour_abs_bytes_mut_fixed_len(), hour_abs);
         }
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }
@@ -499,6 +505,7 @@ impl TimeNumOffsetColonStr {
         unsafe {
             // This is safe because the string is ASCII string and
             // `HOUR_SIGNED_RANGE` is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[HOUR_SIGNED_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(HOUR_SIGNED_RANGE))
         }
     }
@@ -518,6 +525,7 @@ impl TimeNumOffsetColonStr {
     #[inline]
     #[must_use]
     pub fn hour_signed_bytes_fixed_len(&self) -> &[u8; 3] {
+        debug_assert_safe_version_ok!(<&[u8; 3]>::try_from(&self.0[HOUR_SIGNED_RANGE]));
         let ptr = self.0[HOUR_SIGNED_RANGE].as_ptr() as *const [u8; 3];
         // This must be always safe because the string is valid time-numoffset string.
         unsafe { &*ptr }
@@ -586,7 +594,7 @@ impl TimeNumOffsetColonStr {
     ) -> Result<(), Error> {
         self.set_hour_abs(hour_abs)?;
         self.set_sign(sign);
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }
@@ -647,6 +655,7 @@ impl TimeNumOffsetColonStr {
         unsafe {
             // This is safe because the string is ASCII string and
             // `MINUTE_RANGE` is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[MINUTE_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(MINUTE_RANGE))
         }
     }
@@ -668,6 +677,7 @@ impl TimeNumOffsetColonStr {
     pub fn minute_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `MINUTE_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[MINUTE_RANGE]));
             let ptr = self.0.as_ptr().add(MINUTE_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -683,6 +693,7 @@ impl TimeNumOffsetColonStr {
     #[must_use]
     unsafe fn minute_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `MINUTE_RANGE` fits inside the string.
+        debug_assert!(<&[u8; 2]>::try_from(&self.0[MINUTE_RANGE]).is_ok());
         let ptr = self.0.as_mut_ptr().add(MINUTE_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -733,7 +744,7 @@ impl TimeNumOffsetColonStr {
             // This is safe because `write_digit2()` fills the slice with ASCII digits.
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }
@@ -823,7 +834,7 @@ impl TimeNumOffsetColonStr {
             write_digit2(self.hour_abs_bytes_mut_fixed_len(), hour_abs);
             write_digit2(self.minute_bytes_mut_fixed_len(), minute);
         }
-        debug_assert!(validate_bytes(self.as_bytes()).is_ok());
+        debug_assert!(validate_bytes(&self.0).is_ok());
 
         Ok(())
     }

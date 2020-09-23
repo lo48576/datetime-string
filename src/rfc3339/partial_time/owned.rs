@@ -80,6 +80,7 @@ impl PartialTimeString {
     pub fn as_deref(&self) -> &PartialTimeStr {
         unsafe {
             // This is safe because `self.0` is valid partial-time string.
+            debug_assert_safe_version_ok!(PartialTimeStr::from_bytes(&self.0));
             PartialTimeStr::from_bytes_unchecked(&self.0)
         }
     }
@@ -104,6 +105,7 @@ impl PartialTimeString {
     pub fn as_deref_mut(&mut self) -> &mut PartialTimeStr {
         unsafe {
             // This is safe because `self.0` is valid partial-time string.
+            debug_assert!(PartialTimeStr::from_bytes(&self.0).is_ok());
             PartialTimeStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
@@ -172,6 +174,7 @@ impl From<PartialTimeString> for String {
     fn from(v: PartialTimeString) -> String {
         unsafe {
             // This is safe because a valid `PartialTimeString` is an ASCII string.
+            debug_assert!(str::from_utf8(&v.0).is_ok());
             String::from_utf8_unchecked(v.0)
         }
     }
@@ -181,6 +184,7 @@ impl From<&PartialTimeStr> for PartialTimeString {
     fn from(v: &PartialTimeStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
+            debug_assert!(validate_bytes(&v.0).is_ok());
             Self::from_bytes_unchecked(v.0.into())
         }
     }

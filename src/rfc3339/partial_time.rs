@@ -201,6 +201,7 @@ impl PartialTimeStr {
         unsafe {
             // This is safe because the `PartialTimeStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -242,6 +243,9 @@ impl PartialTimeStr {
     pub fn hms(&self) -> &Hms6ColonStr {
         unsafe {
             // This is safe because a valid partial-time string has `hh:mm:ss` as a prefix.
+            debug_assert_safe_version_ok!(Hms6ColonStr::from_bytes(
+                &self.0[..PARTIAL_TIME_LEN_MIN]
+            ));
             Hms6ColonStr::from_bytes_unchecked(self.0.get_unchecked(..PARTIAL_TIME_LEN_MIN))
         }
     }
@@ -267,6 +271,7 @@ impl PartialTimeStr {
             // This is safe because a valid partial-time string has `hh:mm:ss`
             // as a prefix, and `Hms6ColonStr` ensures that the underlying bytes
             // are ASCII string after modification.
+            debug_assert!(Hms6ColonStr::from_bytes(&self.0[..PARTIAL_TIME_LEN_MIN]).is_ok());
             Hms6ColonStr::from_bytes_unchecked_mut(self.0.get_unchecked_mut(..PARTIAL_TIME_LEN_MIN))
         }
     }
@@ -291,6 +296,7 @@ impl PartialTimeStr {
             unsafe {
                 // This is safe because a valid partial-time string which is longer than
                 // PARTIAL_TIME_LEN_MIN (== "hh:mm:ss".len()) has time-secfrac as a prefix.
+                debug_assert_safe_version_ok!(SecfracStr::from_bytes(v));
                 SecfracStr::from_bytes_unchecked(v)
             }
         })
@@ -320,6 +326,11 @@ impl PartialTimeStr {
             // PARTIAL_TIME_LEN_MIN (== "hh:mm:ss".len()) has time-secfrac as a prefix,
             // and `SecfracStr` ensures that the underlying bytes are ASCII string
             // after modification.
+            debug_assert_safe_version_ok!(self
+                .0
+                .get_mut(PARTIAL_TIME_LEN_MIN..)
+                .map(|v| SecfracStr::from_bytes(v))
+                .transpose());
             self.0
                 .get_mut(PARTIAL_TIME_LEN_MIN..)
                 .map(|v| SecfracStr::from_bytes_unchecked_mut(v))

@@ -233,6 +233,7 @@ impl Ymd8HyphenStr {
         unsafe {
             // This is safe because the `Ymd8HyphenStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -279,6 +280,7 @@ impl Ymd8HyphenStr {
             "Ymd8HyphenStr must always be 10 bytes"
         );
 
+        debug_assert_safe_version_ok!(<&[u8; FULL_DATE_LEN]>::try_from(&self.0));
         let ptr = self.0.as_ptr() as *const [u8; FULL_DATE_LEN];
         // This must be always safe because the length is already checked.
         unsafe { &*ptr }
@@ -301,6 +303,7 @@ impl Ymd8HyphenStr {
         unsafe {
             // This is safe because the string is ASCII string and `YEAR_RANGE`
             // is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[YEAR_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(YEAR_RANGE))
         }
     }
@@ -322,6 +325,7 @@ impl Ymd8HyphenStr {
     pub fn year_bytes_fixed_len(&self) -> &[u8; 4] {
         unsafe {
             // This is safe because `YEAR_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 4]>::try_from(&self.0[YEAR_RANGE]));
             let ptr = self.0.as_ptr().add(YEAR_RANGE.start) as *const [u8; 4];
             &*ptr
         }
@@ -337,6 +341,7 @@ impl Ymd8HyphenStr {
     #[must_use]
     unsafe fn year_bytes_mut_fixed_len(&mut self) -> &mut [u8; 4] {
         // This is safe because `YEAR_RANGE` fits inside the string.
+        debug_assert!(<&[u8; 4]>::try_from(&self.0[YEAR_RANGE]).is_ok());
         let ptr = self.0.as_mut_ptr().add(YEAR_RANGE.start) as *mut [u8; 4];
         &mut *ptr
     }
@@ -375,6 +380,7 @@ impl Ymd8HyphenStr {
         unsafe {
             // This is safe because the string is ASCII string and `MONTH_RANGE`
             // is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[MONTH_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(MONTH_RANGE))
         }
     }
@@ -396,6 +402,7 @@ impl Ymd8HyphenStr {
     pub fn month_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `MONTH_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[MONTH_RANGE]));
             let ptr = self.0.as_ptr().add(MONTH_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -411,6 +418,7 @@ impl Ymd8HyphenStr {
     #[must_use]
     unsafe fn month_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `MONTH_RANGE` fits inside the string.
+        debug_assert!(<&[u8; 2]>::try_from(&self.0[MONTH_RANGE]).is_ok());
         let ptr = self.0.as_mut_ptr().add(MONTH_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -466,6 +474,7 @@ impl Ymd8HyphenStr {
         unsafe {
             // This is safe because the string is ASCII string and `MDAY_RANGE`
             // is always inside the string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0[MDAY_RANGE]));
             str::from_utf8_unchecked(self.0.get_unchecked(MDAY_RANGE))
         }
     }
@@ -487,6 +496,7 @@ impl Ymd8HyphenStr {
     pub fn mday_bytes_fixed_len(&self) -> &[u8; 2] {
         unsafe {
             // This is safe because `MDAY_RANGE` fits inside the string.
+            debug_assert_safe_version_ok!(<&[u8; 2]>::try_from(&self.0[MDAY_RANGE]));
             let ptr = self.0.as_ptr().add(MDAY_RANGE.start) as *const [u8; 2];
             &*ptr
         }
@@ -502,6 +512,7 @@ impl Ymd8HyphenStr {
     #[must_use]
     unsafe fn mday_bytes_mut_fixed_len(&mut self) -> &mut [u8; 2] {
         // This is safe because `MDAY_RANGE` fits inside the string.
+        debug_assert!(<&[u8; 2]>::try_from(&self.0[MDAY_RANGE]).is_ok());
         let ptr = self.0.as_mut_ptr().add(MDAY_RANGE.start) as *mut [u8; 2];
         &mut *ptr
     }
@@ -554,6 +565,7 @@ impl Ymd8HyphenStr {
             write_digit4(self.year_bytes_mut_fixed_len(), year);
         }
 
+        debug_assert!(validate_bytes(&self.0).is_ok());
         debug_assert!(
             validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
             "Date should be valid after modification"
@@ -591,6 +603,7 @@ impl Ymd8HyphenStr {
             write_digit2(self.month_bytes_mut_fixed_len(), month0.wrapping_add(1));
         }
 
+        debug_assert!(validate_bytes(&self.0).is_ok());
         debug_assert!(
             validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
             "Date should be valid after modification"
@@ -650,6 +663,7 @@ impl Ymd8HyphenStr {
             write_digit2(self.mday_bytes_mut_fixed_len(), mday);
         }
 
+        debug_assert!(validate_bytes(&self.0).is_ok());
         debug_assert!(
             validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
             "Date should be valid after modification"
@@ -685,6 +699,7 @@ impl Ymd8HyphenStr {
             write_digit2(self.mday_bytes_mut_fixed_len(), mday);
         }
 
+        debug_assert!(validate_bytes(&self.0).is_ok());
         debug_assert!(
             validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
             "Date should be valid after modification"
@@ -720,6 +735,7 @@ impl Ymd8HyphenStr {
             write_digit2(self.mday_bytes_mut_fixed_len(), mday);
         }
 
+        debug_assert!(validate_bytes(&self.0).is_ok());
         debug_assert!(
             validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
             "Date should be valid after modification"
@@ -758,6 +774,7 @@ impl Ymd8HyphenStr {
             write_digit2(self.mday_bytes_mut_fixed_len(), mday);
         }
 
+        debug_assert!(validate_bytes(&self.0).is_ok());
         debug_assert!(
             validate_ym1d(self.year(), self.month1(), self.mday()).is_ok(),
             "Date should be valid after modification"

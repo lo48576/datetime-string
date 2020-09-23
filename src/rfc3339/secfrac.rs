@@ -199,6 +199,7 @@ impl SecfracStr {
         unsafe {
             // This is safe because the `SecfracStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -240,6 +241,7 @@ impl SecfracStr {
     pub fn digits(&self) -> &SecfracDigitsStr {
         unsafe {
             // This is safe because the digits part contains only ASCII digits.
+            debug_assert_safe_version_ok!(SecfracDigitsStr::from_bytes(&self.0[DIGITS_RANGE]));
             SecfracDigitsStr::from_bytes_unchecked(self.0.get_unchecked(DIGITS_RANGE))
         }
     }
@@ -270,6 +272,7 @@ impl SecfracStr {
             // This is safe because a `SecfracStr` string is an ASCII string,
             // and `SecfracDigitsStr` ensures that the underlying bytes are
             // also ASCII string after modification.
+            debug_assert!(SecfracDigitsStr::from_bytes(&self.0[DIGITS_RANGE]).is_ok());
             SecfracDigitsStr::from_bytes_unchecked_mut(self.0.get_unchecked_mut(DIGITS_RANGE))
         }
     }
@@ -294,10 +297,10 @@ impl SecfracStr {
     #[must_use]
     pub fn milliseconds_secfrac(&self) -> Option<&SecfracStr> {
         self.0.get(..4).map(|s| unsafe {
-            debug_assert!(validate_bytes(s).is_ok());
             // This is safe because ".NNN" value (where Ns are digits) is a
             // valid time-secfrac string.
-            SecfracStr::from_bytes_unchecked(s)
+            debug_assert_safe_version_ok!(Self::from_bytes(s));
+            Self::from_bytes_unchecked(s)
         })
     }
 
@@ -321,10 +324,10 @@ impl SecfracStr {
     #[must_use]
     pub fn microseconds_secfrac(&self) -> Option<&SecfracStr> {
         self.0.get(..7).map(|s| unsafe {
-            debug_assert!(validate_bytes(s).is_ok());
             // This is safe because ".NNNNNN" value (where Ns are digits) is a
             // valid time-secfrac string.
-            SecfracStr::from_bytes_unchecked(s)
+            debug_assert_safe_version_ok!(Self::from_bytes(s));
+            Self::from_bytes_unchecked(s)
         })
     }
 
@@ -348,10 +351,10 @@ impl SecfracStr {
     #[must_use]
     pub fn nanoseconds_secfrac(&self) -> Option<&SecfracStr> {
         self.0.get(..10).map(|s| unsafe {
-            debug_assert!(validate_bytes(s).is_ok());
             // This is safe because ".NNNNNNNNN" value (where Ns are digits) is
             // a valid time-secfrac string.
-            SecfracStr::from_bytes_unchecked(s)
+            debug_assert_safe_version_ok!(Self::from_bytes(s));
+            Self::from_bytes_unchecked(s)
         })
     }
 }

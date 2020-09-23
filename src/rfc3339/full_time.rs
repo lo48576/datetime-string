@@ -183,6 +183,7 @@ impl FullTimeStr {
         unsafe {
             // This is safe because the `FullTimeStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -241,16 +242,22 @@ impl FullTimeStr {
     #[must_use]
     pub fn decompose(&self) -> (&PartialTimeStr, &TimeOffsetStr) {
         let offset_start_pos = self.offset_start_pos();
+        debug_assert!(
+            offset_start_pos < self.len(),
+            "Time offset should not be empty"
+        );
         let (partial_time, offset) = self.0.split_at(offset_start_pos);
 
         let partial_time = unsafe {
             // This is safe because a `full-time` string has a `partial-time`
             // followed by `time-offset`.
+            debug_assert_safe_version_ok!(PartialTimeStr::from_bytes(partial_time));
             PartialTimeStr::from_bytes_unchecked(partial_time)
         };
         let offset = unsafe {
             // This is safe because a `full-time` string has a `time-offset`
             // suffix following `partial-time`.
+            debug_assert_safe_version_ok!(TimeOffsetStr::from_bytes(offset));
             TimeOffsetStr::from_bytes_unchecked(offset)
         };
 
@@ -282,6 +289,12 @@ impl FullTimeStr {
     #[must_use]
     pub fn decompose_mut(&mut self) -> (&mut PartialTimeStr, &mut TimeOffsetStr) {
         let offset_start_pos = self.offset_start_pos();
+        debug_assert!(
+            offset_start_pos < self.len(),
+            "Time offset should not be empty"
+        );
+        debug_assert!(PartialTimeStr::from_bytes(&self.0[..offset_start_pos]).is_ok());
+        debug_assert!(TimeOffsetStr::from_bytes(&self.0[offset_start_pos..]).is_ok());
         let (partial_time, offset) = self.0.split_at_mut(offset_start_pos);
 
         unsafe {
@@ -317,6 +330,7 @@ impl FullTimeStr {
         let offset_start_pos = self.offset_start_pos();
         debug_assert!(offset_start_pos < self.0.len());
         unsafe {
+            debug_assert_safe_version_ok!(PartialTimeStr::from_bytes(&self.0[..offset_start_pos]));
             // This is safe because `offset_start_pos` is always less than the string length.
             let s = self.0.get_unchecked(..offset_start_pos);
             // This is safe because a `full-time` string has a `partial-time`
@@ -350,6 +364,7 @@ impl FullTimeStr {
         let offset_start_pos = self.offset_start_pos();
         debug_assert!(offset_start_pos < self.0.len());
         unsafe {
+            debug_assert!(PartialTimeStr::from_bytes(&self.0[..offset_start_pos]).is_ok());
             // This is safe because `offset_start_pos` is always less than the string length.
             let s = self.0.get_unchecked_mut(..offset_start_pos);
             // This is safe because a `full-time` string has a `partial-time`
@@ -378,6 +393,7 @@ impl FullTimeStr {
         let offset_start_pos = self.offset_start_pos();
         debug_assert!(offset_start_pos < self.0.len());
         unsafe {
+            debug_assert_safe_version_ok!(TimeOffsetStr::from_bytes(&self.0[offset_start_pos..]));
             // This is safe because `offset_start_pos` is always less than the string length.
             let s = self.0.get_unchecked(offset_start_pos..);
             // This is safe because a `full-time` string has a `time-offset`
@@ -411,6 +427,7 @@ impl FullTimeStr {
         let offset_start_pos = self.offset_start_pos();
         debug_assert!(offset_start_pos < self.0.len());
         unsafe {
+            debug_assert!(TimeOffsetStr::from_bytes(&self.0[offset_start_pos..]).is_ok());
             // This is safe because `offset_start_pos` is always less than the string length.
             let s = self.0.get_unchecked_mut(offset_start_pos..);
             // This is safe because a `full-time` string has a `time-offset`

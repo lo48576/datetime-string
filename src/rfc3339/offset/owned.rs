@@ -75,6 +75,7 @@ impl TimeOffsetString {
     pub fn as_deref(&self) -> &TimeOffsetStr {
         unsafe {
             // This is safe because a valid `time-offset` string is also an ASCII string.
+            debug_assert_safe_version_ok!(TimeOffsetStr::from_bytes(&self.0));
             TimeOffsetStr::from_bytes_unchecked(&self.0)
         }
     }
@@ -101,6 +102,7 @@ impl TimeOffsetString {
             // This is safe because a valid `time-offset` string is also an
             // ASCII string, and `TimeOffsetStr` ensures that the underlying
             // bytes are ASCII string after modification.
+            debug_assert!(TimeOffsetStr::from_bytes(&self.0).is_ok());
             TimeOffsetStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
@@ -169,6 +171,7 @@ impl From<TimeOffsetString> for String {
     fn from(v: TimeOffsetString) -> String {
         unsafe {
             // This is safe because a valid `TimeOffsetString` is an ASCII string.
+            debug_assert!(str::from_utf8(&v.0).is_ok());
             String::from_utf8_unchecked(v.0)
         }
     }
@@ -178,7 +181,8 @@ impl From<&TimeOffsetStr> for TimeOffsetString {
     fn from(v: &TimeOffsetStr) -> Self {
         unsafe {
             // This is safe because the value is already validated.
-            Self::from_bytes_unchecked(v.as_bytes().into())
+            debug_assert!(validate_bytes(&v.0).is_ok());
+            Self::from_bytes_unchecked(v.0.into())
         }
     }
 }

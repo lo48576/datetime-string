@@ -197,6 +197,7 @@ impl SecfracDigitsStr {
         unsafe {
             // This is safe because the `SecfracDigitsStr` ensures that the
             // underlying bytes are ASCII string.
+            debug_assert_safe_version_ok!(str::from_utf8(&self.0));
             str::from_utf8_unchecked(&self.0)
         }
     }
@@ -271,9 +272,10 @@ impl SecfracDigitsStr {
     pub fn milliseconds_digits(&self) -> Option<&SecfracDigitsStr> {
         self.0.get(MILLI_RANGE).map(|s| unsafe {
             debug_assert!(validate_bytes(s).is_ok());
+            debug_assert_safe_version_ok!(<&Self>::try_from(s));
             // This is safe because `self.0` consists of only ASCII digits,
             // and so is the substring.
-            SecfracDigitsStr::from_bytes_unchecked(s)
+            Self::from_bytes_unchecked(s)
         })
     }
 
@@ -299,7 +301,8 @@ impl SecfracDigitsStr {
             unsafe {
                 // This is safe because `self.0` consists of only ASCII digits,
                 // and so is the substring.
-                SecfracDigitsStr::from_bytes_unchecked_mut(s)
+                debug_assert!(<&Self>::try_from(&*s).is_ok());
+                Self::from_bytes_unchecked_mut(s)
             }
         })
     }
@@ -325,6 +328,7 @@ impl SecfracDigitsStr {
     pub fn milliseconds_bytes_fixed_len(&self) -> Option<&[u8; 3]> {
         self.0.get(MILLI_RANGE).map(|s| {
             debug_assert_eq!(s.len(), 3);
+            debug_assert_safe_version_ok!(<&[u8; 3]>::try_from(s));
             let ptr = s.as_ptr() as *const [u8; 3];
             unsafe {
                 // This is safe because the string consists of only ASCII digits.
@@ -383,6 +387,7 @@ impl SecfracDigitsStr {
     pub fn microseconds_digits(&self) -> Option<&SecfracDigitsStr> {
         self.0.get(MICRO_RANGE).map(|s| unsafe {
             debug_assert!(validate_bytes(s).is_ok());
+            debug_assert_safe_version_ok!(<&Self>::try_from(s));
             // This is safe because `self.0` consists of only ASCII digits,
             // and so is the substring.
             SecfracDigitsStr::from_bytes_unchecked(s)
@@ -411,6 +416,7 @@ impl SecfracDigitsStr {
             unsafe {
                 // This is safe because `self.0` consists of only ASCII digits,
                 // and so is the substring.
+                debug_assert!(<&Self>::try_from(&*s).is_ok());
                 SecfracDigitsStr::from_bytes_unchecked_mut(s)
             }
         })
@@ -437,6 +443,7 @@ impl SecfracDigitsStr {
     pub fn microseconds_bytes_fixed_len(&self) -> Option<&[u8; 6]> {
         self.0.get(MICRO_RANGE).map(|s| {
             debug_assert_eq!(s.len(), 6);
+            debug_assert_safe_version_ok!(<&[u8; 6]>::try_from(s));
             let ptr = s.as_ptr() as *const [u8; 6];
             unsafe {
                 // This is safe because the string consists of only ASCII digits.
@@ -499,6 +506,7 @@ impl SecfracDigitsStr {
     pub fn nanoseconds_digits(&self) -> Option<&SecfracDigitsStr> {
         self.0.get(NANO_RANGE).map(|s| unsafe {
             debug_assert!(validate_bytes(s).is_ok());
+            debug_assert_safe_version_ok!(<&Self>::try_from(s));
             // This is safe because `self.0` consists of only ASCII digits,
             // and so is the substring.
             SecfracDigitsStr::from_bytes_unchecked(s)
@@ -527,6 +535,7 @@ impl SecfracDigitsStr {
             unsafe {
                 // This is safe because `self.0` consists of only ASCII digits,
                 // and so is the substring.
+                debug_assert!(<&Self>::try_from(&*s).is_ok());
                 SecfracDigitsStr::from_bytes_unchecked_mut(s)
             }
         })
@@ -553,6 +562,7 @@ impl SecfracDigitsStr {
     pub fn nanoseconds_bytes_fixed_len(&self) -> Option<&[u8; 9]> {
         self.0.get(NANO_RANGE).map(|s| {
             debug_assert_eq!(s.len(), 9);
+            debug_assert_safe_version_ok!(<&[u8; 9]>::try_from(s));
             let ptr = s.as_ptr() as *const [u8; 9];
             unsafe {
                 // This is safe because the string consists of only ASCII digits.

@@ -79,6 +79,7 @@ impl DateTimeString {
     pub fn as_deref(&self) -> &DateTimeStr {
         unsafe {
             // This is safe because `self.0` is already validated.
+            debug_assert_safe_version_ok!(DateTimeStr::from_bytes(&self.0));
             DateTimeStr::from_bytes_unchecked(&self.0)
         }
     }
@@ -103,6 +104,7 @@ impl DateTimeString {
     pub fn as_deref_mut(&mut self) -> &mut DateTimeStr {
         unsafe {
             // This is safe because `self.0` is already validated.
+            debug_assert!(DateTimeStr::from_bytes(&self.0).is_ok());
             DateTimeStr::from_bytes_unchecked_mut(&mut self.0)
         }
     }
@@ -171,6 +173,7 @@ impl From<DateTimeString> for String {
     fn from(v: DateTimeString) -> String {
         unsafe {
             // This is safe because a valid `DateTimeString` is an ASCII string.
+            debug_assert!(str::from_utf8(&v.0).is_ok());
             String::from_utf8_unchecked(v.0)
         }
     }
@@ -178,9 +181,10 @@ impl From<DateTimeString> for String {
 
 impl From<&DateTimeStr> for DateTimeString {
     fn from(v: &DateTimeStr) -> Self {
+        debug_assert!(validate_bytes(&v.0).is_ok());
         unsafe {
             // This is safe because the value is already validated.
-            Self::from_bytes_unchecked(v.as_bytes().into())
+            Self::from_bytes_unchecked(v.0.into())
         }
     }
 }
