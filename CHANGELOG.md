@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+* Now `TryFrom<Vec<u8>> for {OwnedString}` impls uses `ConversionError<Vec<u8>>`
+  as an error type, instead of `Error`.
+
+### Breaking changes
+
+* Now `TryFrom<Vec<u8>> for {OwnedString}` impls uses `ConversionError<Vec<u8>>`
+  as an error type, instead of `Error`.
+    + A pair of `Error` and `ConversionError<T>` is quite similar to
+      `std::str::Utf8Error` and `std::string::FromUtf8Error`.
+      `ConversionError<T>` allows users to get the value back without extra
+      allocation overhead, when it is not convertible to the target type.
+
 ## [0.1.0]
 
 Initial release.
