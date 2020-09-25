@@ -7,7 +7,7 @@ use core::{convert::TryFrom, fmt, ops, str};
 
 use alloc::{string::String, vec::Vec};
 
-use crate::Error;
+use crate::{ConversionError, Error};
 
 use super::{validate_bytes, PartialTimeStr};
 
@@ -212,15 +212,17 @@ impl TryFrom<&str> for PartialTimeString {
 }
 
 impl TryFrom<Vec<u8>> for PartialTimeString {
-    type Error = Error;
+    type Error = ConversionError<Vec<u8>>;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
-        validate_bytes(&v)?;
-        Ok(unsafe {
-            // This is safe because the value is successfully validated.
-            Self::from_bytes_maybe_unchecked(v)
-        })
+        match validate_bytes(&v) {
+            Ok(_) => Ok(unsafe {
+                // This is safe because the value is successfully validated.
+                Self::from_bytes_maybe_unchecked(v)
+            }),
+            Err(e) => Err(ConversionError::new(v, e)),
+        }
     }
 }
 

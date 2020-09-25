@@ -119,6 +119,17 @@ pub struct ConversionError<T> {
 }
 
 impl<T> ConversionError<T> {
+    /// Creates a new error.
+    #[cfg(feature = "alloc")]
+    #[inline]
+    #[must_use]
+    pub(crate) fn new<E: Into<Error>>(value: T, error: E) -> Self {
+        Self {
+            value,
+            error: error.into(),
+        }
+    }
+
     /// Returns the inner (validation) error.
     #[inline]
     #[must_use]
