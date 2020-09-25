@@ -108,3 +108,48 @@ impl From<DateError> for Error {
         }
     }
 }
+
+/// Error with value before conversion.
+#[derive(Debug, Clone)]
+pub struct ConversionError<T> {
+    /// Conversion source value.
+    value: T,
+    /// Error.
+    error: Error,
+}
+
+impl<T> ConversionError<T> {
+    /// Creates a new error.
+    #[cfg(feature = "alloc")]
+    #[inline]
+    #[must_use]
+    pub(crate) fn new<E: Into<Error>>(value: T, error: E) -> Self {
+        Self {
+            value,
+            error: error.into(),
+        }
+    }
+
+    /// Returns the inner (validation) error.
+    #[inline]
+    #[must_use]
+    pub fn error(&self) -> Error {
+        self.error
+    }
+
+    /// Returns the value, which is failed to convert.
+    #[inline]
+    #[must_use]
+    pub fn value(self) -> T {
+        self.value
+    }
+}
+
+impl<T: fmt::Debug> fmt::Display for ConversionError<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Failed to convert {:?}: {}", self.value, self.error)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<T: fmt::Debug> std::error::Error for ConversionError<T> {}
