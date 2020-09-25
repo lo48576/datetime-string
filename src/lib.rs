@@ -17,4 +17,4 @@ pub(crate) mod parse;
 pub mod rfc3339;
 pub(crate) mod str;
 
-pub use self::error::Error;
+pub use self::error::{ConversionError, Error};
