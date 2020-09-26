@@ -4,6 +4,11 @@
 
 * Now `TryFrom<Vec<u8>> for {OwnedString}` impls uses `ConversionError<Vec<u8>>`
   as an error type, instead of `Error`.
+* `TryFrom<String> for {VariableLengthOwnedString}` impls are added.
+
+### Added
+
+* `TryFrom<String> for {VariableLengthOwnedString}` impls are added.
 
 ### Breaking changes
 
