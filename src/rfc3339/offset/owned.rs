@@ -223,6 +223,21 @@ impl TryFrom<Vec<u8>> for TimeOffsetString {
     }
 }
 
+impl TryFrom<String> for TimeOffsetString {
+    type Error = ConversionError<String>;
+
+    #[inline]
+    fn try_from(v: String) -> Result<Self, Self::Error> {
+        match validate_bytes(v.as_bytes()) {
+            Ok(_) => Ok(unsafe {
+                // This is safe because the value is successfully validated.
+                Self::from_bytes_maybe_unchecked(v.into_bytes())
+            }),
+            Err(e) => Err(ConversionError::new(v, e)),
+        }
+    }
+}
+
 impl fmt::Display for TimeOffsetString {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
