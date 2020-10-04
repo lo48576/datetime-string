@@ -1113,6 +1113,57 @@ impl Ymd8HyphenString {
         Self(s)
     }
 
+    /// Returns the minimum date.
+    #[inline]
+    #[must_use]
+    fn min() -> Self {
+        unsafe {
+            // This is safe because `0000-01-01` is valid.
+            debug_assert_safe_version_ok!(Self::try_from(*b"0000-01-01"));
+            Self::new_maybe_unchecked(*b"0000-01-01")
+        }
+    }
+
+    /// Creates a new `Ymd8HyphenString` from the given date.
+    ///
+    /// Note that `month0` is 0-based, i.e. January is 0, February is 1, and so on.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenString;
+    /// let date = Ymd8HyphenString::from_ym0d(2001, 11, 31)?;
+    /// assert_eq!(date.as_str(), "2001-12-31");
+    ///
+    /// assert!(Ymd8HyphenString::from_ym0d(2001, 1, 29).is_err(), "2001-02-29 is invaild date");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_ym0d(year: u16, month0: u8, mday: u8) -> Result<Self, Error> {
+        let mut v = Self::min();
+        v.set_ym0d(year, month0, mday)?;
+        Ok(v)
+    }
+
+    /// Creates a new `Ymd8HyphenString` from the given date.
+    ///
+    /// Note that `month1` is 1-based, i.e. January is 1, February is 2, and so on.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenString;
+    /// let date = Ymd8HyphenString::from_ym1d(2001, 12, 31)?;
+    /// assert_eq!(date.as_str(), "2001-12-31");
+    ///
+    /// assert!(Ymd8HyphenString::from_ym1d(2001, 2, 29).is_err(), "2001-02-29 is invaild date");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_ym1d(year: u16, month1: u8, mday: u8) -> Result<Self, Error> {
+        let mut v = Self::min();
+        v.set_ym1d(year, month1, mday)?;
+        Ok(v)
+    }
+
     /// Returns a `&Ymd8HyphenStr` for the string.
     ///
     /// # Examples
