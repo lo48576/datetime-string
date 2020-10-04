@@ -231,6 +231,29 @@ impl TimeNumOffsetColonStr {
         TryFrom::try_from(s)
     }
 
+    /// Assigns the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let mut buf: [u8; 6] = *b"+09:00";
+    /// let offset = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
+    /// assert_eq!(offset.as_str(), "+09:00");
+    ///
+    /// let newoffset = TimeNumOffsetColonStr::from_str("-00:00")?;
+    ///
+    /// offset.assign(newoffset);
+    /// assert_eq!(offset.as_str(), "-00:00");
+    /// assert_eq!(buf, *b"-00:00");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn assign(&mut self, v: &Self) {
+        debug_assert_eq!(self.0.len(), v.0.len());
+        self.0.copy_from_slice(&v.0);
+    }
+
     /// Returns a string slice.
     ///
     /// # Examples
