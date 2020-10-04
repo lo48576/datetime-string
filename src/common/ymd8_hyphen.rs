@@ -224,6 +224,29 @@ impl Ymd8HyphenStr {
         TryFrom::try_from(s)
     }
 
+    /// Assigns the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let mut buf: [u8; 10] = *b"1999-12-31";
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
+    /// assert_eq!(date.as_str(), "1999-12-31");
+    ///
+    /// let newdate = Ymd8HyphenStr::from_str("2000-01-01")?;
+    ///
+    /// date.assign(newdate);
+    /// assert_eq!(date.as_str(), "2000-01-01");
+    /// assert_eq!(buf, *b"2000-01-01");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn assign(&mut self, v: &Self) {
+        debug_assert_eq!(self.0.len(), v.0.len());
+        self.0.copy_from_slice(&v.0);
+    }
+
     /// Returns a string slice.
     ///
     /// # Examples

@@ -242,6 +242,29 @@ impl Hms6ColonStr {
         TryFrom::try_from(s)
     }
 
+    /// Assigns the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let mut buf: [u8; 8] = *b"12:34:56";
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
+    /// assert_eq!(time.as_str(), "12:34:56");
+    ///
+    /// let newtime = Hms6ColonStr::from_str("01:01:01")?;
+    ///
+    /// time.assign(newtime);
+    /// assert_eq!(time.as_str(), "01:01:01");
+    /// assert_eq!(buf, *b"01:01:01");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn assign(&mut self, v: &Self) {
+        debug_assert_eq!(self.0.len(), v.0.len());
+        self.0.copy_from_slice(&v.0);
+    }
+
     /// Returns a string slice.
     ///
     /// # Examples
