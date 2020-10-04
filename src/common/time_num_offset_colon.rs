@@ -852,7 +852,7 @@ impl TimeNumOffsetColonStr {
     /// Note that both `+00:00` and `-00:00` is considered as 0 minutes offset.
     /// RFC 3339 defines semantics of `-00:00` as "unknown local offset".
     /// If your application should be aware of that semantics, use
-    /// [`is_unknown_local_offset`] or [`sign`] to distinguish them.
+    /// [`is_unknown_local_offset`] method or [`sign`] method to distinguish them.
     ///
     /// # Examples
     ///
@@ -881,6 +881,9 @@ impl TimeNumOffsetColonStr {
     /// assert!(negative0.is_unknown_local_offset(), "unknown local offset");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
+    ///
+    /// [`is_unknown_local_offset`]: TimeNumOffsetColonStr::is_unknown_local_offset
+    /// [`sign`]: TimeNumOffsetColonStr::sign
     #[must_use]
     pub fn in_minutes(&self) -> i16 {
         let abs_min = self.hour_abs() as i16 * 60 + self.minute() as i16;

@@ -13,6 +13,8 @@ use super::{validate_bytes, PartialTimeStr};
 
 /// Owned string for a time in RFC 3339 [`partial-time`] format, such as `12:34:56.7890`.
 ///
+/// Available when `alloc` feature is enabled.
+///
 /// This is "partial", because it is not associated to a time offset.
 ///
 /// To create a value of this type, use [`str::parse`] method or

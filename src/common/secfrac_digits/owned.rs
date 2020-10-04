@@ -11,6 +11,8 @@ use super::{validate_bytes, SecfracDigitsStr};
 
 /// String slice for digits of fractions of a second.
 ///
+/// Available when `alloc` feature is enabled.
+///
 /// Note that values of this type cannot be not empty string.
 ///
 /// To create a value of this type, use [`str::parse`] method or

@@ -131,6 +131,22 @@ impl<T> ConversionError<T> {
     }
 
     /// Returns the inner (validation) error.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # {
+    /// // `rfc3339::FullTimeString` is only available when `alloc` feature is enabled.
+    /// #![cfg(feature = "alloc")]
+    ///
+    /// # use datetime_string::ConversionError;
+    /// use std::convert::TryFrom;
+    /// use datetime_string::{Error, rfc3339::FullTimeString};
+    ///
+    /// let conv_err = FullTimeString::try_from("invalid time".to_owned()).unwrap_err();
+    /// let _: Error = conv_err.error();
+    /// # }
+    /// ```
     #[inline]
     #[must_use]
     pub fn error(&self) -> Error {
@@ -138,6 +154,23 @@ impl<T> ConversionError<T> {
     }
 
     /// Returns the value, which is failed to convert.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # {
+    /// // `rfc3339::FullTimeString` is only available when `alloc` feature is enabled.
+    /// #![cfg(feature = "alloc")]
+    ///
+    /// # use datetime_string::ConversionError;
+    /// use std::convert::TryFrom;
+    /// use datetime_string::{Error, rfc3339::FullTimeString};
+    ///
+    /// let conv_err = FullTimeString::try_from("invalid time".to_owned()).unwrap_err();
+    /// let source_val: String = conv_err.value();
+    /// assert_eq!(source_val, "invalid time");
+    /// # }
+    /// ```
     #[inline]
     #[must_use]
     pub fn value(self) -> T {

@@ -16,6 +16,8 @@ use super::{validate_bytes, FullTimeStr};
 
 /// Owned string for a time in RFC 3339 [`full-time`] format, such as `12:34:56.7890-23:12`.
 ///
+/// Available when `alloc` feature is enabled.
+///
 /// # Examples
 ///
 /// ```
