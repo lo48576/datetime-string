@@ -5,7 +5,6 @@
 //! [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
 use core::{
-    cmp::Ordering,
     convert::TryFrom,
     fmt,
     ops::{self, Range},
@@ -48,13 +47,13 @@ const SECOND_MAX: u8 = 60;
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 fn validate_bytes(s: &[u8]) -> Result<(), Error> {
-    let s: &[u8; HMS_LEN] = match s.len().cmp(&HMS_LEN) {
-        Ordering::Greater => return Err(ErrorKind::TooLong.into()),
-        Ordering::Less => return Err(ErrorKind::TooShort.into()),
-        Ordering::Equal => {
-            TryFrom::try_from(s).expect("Should never fail because the length is equal")
+    let s: &[u8; HMS_LEN] = TryFrom::try_from(s).map_err(|_| {
+        if s.len() < HMS_LEN {
+            ErrorKind::TooShort
+        } else {
+            ErrorKind::TooLong
         }
-    };
+    })?;
 
     if (s[2] != b':') || (s[5] != b':') {
         return Err(ErrorKind::InvalidSeparator.into());
