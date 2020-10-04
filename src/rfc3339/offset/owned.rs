@@ -5,9 +5,12 @@
 
 use core::{convert::TryFrom, fmt, ops, str};
 
-use alloc::{string::String, vec::Vec};
+use alloc::{borrow::ToOwned, string::String, vec::Vec};
 
-use crate::{ConversionError, Error};
+use crate::{
+    common::{TimeNumOffsetColonStr, TimeNumOffsetColonString},
+    error::{ConversionError, Error},
+};
 
 use super::{validate_bytes, TimeOffsetStr};
 
@@ -161,6 +164,28 @@ impl AsMut<TimeOffsetStr> for TimeOffsetString {
     #[inline]
     fn as_mut(&mut self) -> &mut TimeOffsetStr {
         self
+    }
+}
+
+impl From<&TimeNumOffsetColonStr> for TimeOffsetString {
+    #[inline]
+    fn from(v: &TimeNumOffsetColonStr) -> TimeOffsetString {
+        unsafe {
+            // This is safe because `TimeNumOffsetColonStr` is subset of `TimeOffsetStr`.
+            debug_assert_ok!(validate_bytes(v.as_bytes()));
+            Self::from_bytes_maybe_unchecked(v.as_bytes().to_owned())
+        }
+    }
+}
+
+impl From<TimeNumOffsetColonString> for TimeOffsetString {
+    #[inline]
+    fn from(v: TimeNumOffsetColonString) -> TimeOffsetString {
+        unsafe {
+            // This is safe because `TimeNumOffsetColonStr` is subset of `TimeOffsetStr`.
+            debug_assert_ok!(validate_bytes(v.as_bytes()));
+            Self::from_bytes_maybe_unchecked(v.as_bytes().to_owned())
+        }
     }
 }
 
