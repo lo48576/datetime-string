@@ -13,7 +13,7 @@ use core::{
 };
 
 use crate::{
-    datetime::{validate_ym0d, validate_ym1d},
+    datetime::{is_leap_year, validate_ym0d, validate_ym1d},
     parse::{parse_digits2, parse_digits4},
     str::{write_digit2, write_digit4},
 };
@@ -837,6 +837,63 @@ impl Ymd8HyphenStr {
     #[inline]
     pub fn set_ym1d(&mut self, year: u16, month1: u8, mday: u8) -> Result<(), Error> {
         self.set_ym0d(year, month1.wrapping_sub(1), mday)
+    }
+
+    /// Returns the 0-based day of the year, i.e. days since January 1 of the year.
+    ///
+    /// Note that this value is 0-based.
+    /// January 1 is 0 days since January 1 of the year.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("1970-01-01")?;
+    /// assert_eq!(date.yday0(), 0, "0 for the 1st day of the year, because this is 0-based value");
+    ///
+    /// let date2 = Ymd8HyphenStr::from_str("1970-12-31")?;
+    /// assert_eq!(date2.yday0(), 364);
+    ///
+    /// let leap_last = Ymd8HyphenStr::from_str("2000-12-31")?;
+    /// assert_eq!(leap_last.yday0(), 365, "2000-02-29 exists");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn yday0(&self) -> u16 {
+        self.yday1() - 1
+    }
+
+    /// Returns the 1-based day of the year.
+    ///
+    /// Note that this value is 1-based.
+    /// January 1 is 1st day of the year.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("1970-01-01")?;
+    /// assert_eq!(date.yday1(), 1, "1 for the 1st day of the year, because this is 1-based value");
+    ///
+    /// let date2 = Ymd8HyphenStr::from_str("1970-12-31")?;
+    /// assert_eq!(date2.yday1(), 365);
+    ///
+    /// let leap_last = Ymd8HyphenStr::from_str("2000-12-31")?;
+    /// assert_eq!(leap_last.yday1(), 366, "2000-02-29 exists");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn yday1(&self) -> u16 {
+        /// `yday`s of 0th day for each months of non-leap year.
+        const BASE_YDAYS: [u16; 12] = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+
+        let month0 = self.month0();
+        let non_leap_yday = BASE_YDAYS[usize::from(month0)] + u16::from(self.mday());
+
+        if month0 > 1 && is_leap_year(self.year()) {
+            non_leap_yday + 1
+        } else {
+            non_leap_yday
+        }
     }
 }
 
