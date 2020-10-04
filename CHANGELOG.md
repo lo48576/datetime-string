@@ -7,6 +7,8 @@
 * `TryFrom<String> for {VariableLengthOwnedString}` impls are added.
 * Added `assign` method to fixed length string slice types
   (`common::{Hms6ColonStr, TimeNumOffsetColonStr, Ymd8HyphenStr}`).
+* Added `Hms6ColonStr::to_seconds` method.
+* Added `Ymd8HyphenStr::{days_since_epoch, yday0, yday1}` methods.
 * Improve doc comments.
 
 ### Added
@@ -14,6 +16,8 @@
 * `TryFrom<String> for {VariableLengthOwnedString}` impls are added.
 * Added `assign` method to fixed length string slice types
   (`common::{Hms6ColonStr, TimeNumOffsetColonStr, Ymd8HyphenStr}`).
+* Added `Hms6ColonStr::to_seconds` method.
+* Added `Ymd8HyphenStr::{days_since_epoch, yday0, yday1}` methods.
 
 ### Breaking changes
 

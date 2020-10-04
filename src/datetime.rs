@@ -22,6 +22,12 @@ impl fmt::Display for DateError {
     }
 }
 
+/// Returns true iff the given year is leap year.
+#[inline]
+pub(crate) fn is_leap_year(year: u16) -> bool {
+    (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0))
+}
+
 /// Validates the given year, month, and day of month.
 ///
 /// Note that this function takes 0-based month value and 1-based year and mday.
@@ -44,8 +50,7 @@ pub(crate) fn validate_ym0d(year: u16, month0: u8, mday: u8) -> Result<(), DateE
     }
 
     // For 29th day of month, check if it is leap year.
-    let is_leap_year = (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
-    let mday_max = if is_leap_year { 29 } else { 28 };
+    let mday_max = if is_leap_year(year) { 29 } else { 28 };
 
     if mday <= mday_max {
         Ok(())

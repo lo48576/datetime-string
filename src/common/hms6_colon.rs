@@ -775,6 +775,30 @@ impl Hms6ColonStr {
 
         Ok(())
     }
+
+    /// Retruns the seconds from the start of the day.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
+    /// assert_eq!(time.to_seconds(), 12 * 60 * 60 + 34 * 60 + 56);
+    ///
+    /// let zero = Hms6ColonStr::from_str("00:00:00")?;
+    /// assert_eq!(zero.to_seconds(), 0);
+    ///
+    /// let last = Hms6ColonStr::from_str("23:59:59")?;
+    /// assert_eq!(last.to_seconds(), 24 * 60 * 60 - 1);
+    ///
+    /// let last_leap = Hms6ColonStr::from_str("23:59:60")?;
+    /// assert_eq!(last_leap.to_seconds(), 24 * 60 * 60);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn to_seconds(&self) -> u32 {
+        u32::from(self.hour()) * 3600 + u32::from(self.minute()) * 60 + u32::from(self.second())
+    }
 }
 
 #[cfg(feature = "alloc")]
