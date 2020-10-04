@@ -13,6 +13,8 @@ use super::{validate_bytes, SecfracStr};
 
 /// Owned string for a time in RFC 3339 [`time-secfrac`] format, such as `.7890`.
 ///
+/// Available when `alloc` feature is enabled.
+///
 /// To create a value of this type, use [`str::parse`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&SecfracStr`.
 ///

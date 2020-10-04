@@ -9,6 +9,23 @@
 //! * provide convenient API for getting and setting components of datetime,
 //!   for example getting the hour and setting the day of a month.
 //!
+//! # Feature flags
+//!
+//! * `alloc`
+//!     + Enabled by default.
+//!     + Provides types and functions which requires `alloc` crate.
+//!       Examples of stuff in `alloc` is `String`, `ToOwned`, `Vec<u8>`, etc.
+//! * `std`
+//!     + Enabled by default.
+//!     + Provides types and functions which requires `std` crate.
+//!       Examples of stuff in `std` is `std::error::Error`.
+//! * `serde`
+//!     + Provides `serde::{Serilaize, Deserialize}` implementations for string types.
+//! * `alloc_with_serde`
+//!     + Enables `alloc` feature for this crate and `alloc` feature for `serde` crate.
+//! * `std_with_serde`
+//!     + Enables `std` feature for this crate and `std` feature for `serde` crate.
+//!
 //! # Examples
 //!
 //! ```

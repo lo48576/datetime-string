@@ -17,6 +17,8 @@ use super::{validate_bytes, DateTimeStr};
 /// Owned string for a datetime in RFC 3339 [`date-time`] format, such as
 /// `2001-06-17T12:34:56.7890-23:12`.
 ///
+/// Available when `alloc` feature is enabled.
+///
 /// # Examples
 ///
 /// ```

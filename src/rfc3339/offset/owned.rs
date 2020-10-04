@@ -13,6 +13,8 @@ use super::{validate_bytes, TimeOffsetStr};
 
 /// Owned string for a time in RFC 3339 [`time-offset`] format, such as `+09:00`, `-00:00`, and `Z`.
 ///
+/// Available when `alloc` feature is enabled.
+///
 /// # Examples
 ///
 /// ```
