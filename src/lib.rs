@@ -26,6 +26,22 @@
 //! * `std_with_serde`
 //!     + Enables `std` feature for this crate and `std` feature for `serde` crate.
 //!
+//! # Values construction
+//!
+//! Borrowed string slice types can be constructed by:
+//!
+//! * `from_str()`, `from_mut_str()`,
+//! * `from_bytes()`, `from_bytes_mut()`,
+//! * `TryFrom<&[u8]>`, `TryFrom<&mut [u8]>`,
+//! * `TryFrom<&str>`, and `TryFrom<&mut str>`.
+//!
+//! Owned string types can be constructed by:
+//!
+//! * `From<&{corresponding borrowed string type}>`,
+//! * `TryFrom<&[u8]>`, `TryFrom<Vec<u8>>`,
+//! * `TryFrom<&str>`, `TryFrom<String>`, and
+//! * `FromStr` (i.e. [`str::parse`]).
+//!
 //! # Examples
 //!
 //! ```
