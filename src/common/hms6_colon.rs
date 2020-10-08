@@ -980,6 +980,35 @@ impl Hms6ColonString {
         Self(s)
     }
 
+    /// Returns `00:00:00`.
+    #[inline]
+    #[must_use]
+    fn zero() -> Self {
+        unsafe {
+            // This is safe because `00:00:00` is valid.
+            debug_assert_safe_version_ok!(Self::try_from(*b"00:00:00"));
+            Self::new_maybe_unchecked(*b"00:00:00")
+        }
+    }
+
+    /// Creates a new `Hms6ColonString` from the given time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Hms6ColonString;
+    /// let time = Hms6ColonString::from_hms(12, 34, 56)?;
+    /// assert_eq!(time.as_str(), "12:34:56");
+    ///
+    /// assert!(Hms6ColonString::from_hms(0, 0, 61).is_err(), "00:00:61 is invaild time");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_hms(hour: u8, minute: u8, second: u8) -> Result<Self, Error> {
+        let mut v = Self::zero();
+        v.set_time(hour, minute, second)?;
+        Ok(v)
+    }
+
     /// Returns a `&Hms6ColonStr` for the string.
     ///
     /// # Examples

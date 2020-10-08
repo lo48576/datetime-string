@@ -9,6 +9,7 @@
   (`common::{Hms6ColonStr, TimeNumOffsetColonStr, Ymd8HyphenStr}`).
 * Added `Hms6ColonStr::to_seconds` method.
 * Added `Ymd8HyphenStr::{days_since_epoch, yday0, yday1}` methods.
+* Added value creation methods and trait impls.
 * Improve doc comments.
 
 ### Added
@@ -18,6 +19,18 @@
   (`common::{Hms6ColonStr, TimeNumOffsetColonStr, Ymd8HyphenStr}`).
 * Added `Hms6ColonStr::to_seconds` method.
 * Added `Ymd8HyphenStr::{days_since_epoch, yday0, yday1}` methods.
+* Added value creation methods and trait impls.
+    + `common::Hms6ColonString`
+        - `from_hms()`
+    + `common::Ymd8HyphenString`
+        - `from_ym0d()`, `from_ym1d()`
+    + `common::TimeNumOffsetColonString`
+        - `utc()`, `unknown_local_offset()`, `from_minutes()`,
+          `from_sign_and_hm()`, `from_hm_signed()`
+    + `rfc3339::TimeOffsetString`
+        - `z()`, `unknown_local_offset()`, `from_minutes()`,
+          `from_sign_and_hm()`, `from_hm_signed()`
+        - `From<&common::TimeNumOffsetColonStr{,ing}> for rfc3339::TimeOffsetString`
 
 ### Breaking changes
 

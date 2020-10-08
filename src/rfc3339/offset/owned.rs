@@ -5,9 +5,12 @@
 
 use core::{convert::TryFrom, fmt, ops, str};
 
-use alloc::{string::String, vec::Vec};
+use alloc::{borrow::ToOwned, string::String, vec::Vec};
 
-use crate::{ConversionError, Error};
+use crate::{
+    common::{TimeNumOffsetColonStr, TimeNumOffsetColonString, TimeOffsetSign},
+    error::{ConversionError, Error},
+};
 
 use super::{validate_bytes, TimeOffsetStr};
 
@@ -58,6 +61,102 @@ impl TimeOffsetString {
     unsafe fn from_bytes_maybe_unchecked(s: Vec<u8>) -> Self {
         debug_assert_ok!(validate_bytes(&s));
         Self(s)
+    }
+
+    /// Returns `Z`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetString;
+    /// let z = TimeOffsetString::z();
+    ///
+    /// assert_eq!(z.as_str(), "Z");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn z() -> Self {
+        let z = *b"Z";
+        unsafe {
+            // This is safe because `Z` is valid `time-offset` string.
+            debug_assert_ok!(validate_bytes(&z));
+            Self::from_bytes_maybe_unchecked(z[..].to_owned())
+        }
+    }
+
+    /// Returns `-00:00`, which is defined in RFC 3339 to indicate "unknown local offset".
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetString;
+    /// let unknown_local_offset = TimeOffsetString::unknown_local_offset();
+    /// assert_eq!(unknown_local_offset.as_str(), "-00:00");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn unknown_local_offset() -> Self {
+        TimeNumOffsetColonString::unknown_local_offset().into()
+    }
+
+    /// Creates a new `TimeNumOffsetColonStr` from the given minutes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetString;
+    /// let offset = TimeOffsetString::from_minutes(9 * 60)?;
+    /// assert_eq!(offset.as_str(), "+09:00");
+    ///
+    /// assert!(TimeOffsetString::from_minutes(-24 * 60).is_err(), "-24:00 is invaild time");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_minutes(minutes: i16) -> Result<Self, Error> {
+        TimeNumOffsetColonString::from_minutes(minutes).map(Into::into)
+    }
+
+    /// Creates a new `TimeNumOffsetColonStr` from the given minutes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetString;
+    /// use datetime_string::common::TimeOffsetSign;
+    /// let offset = TimeOffsetString::from_sign_and_hm(TimeOffsetSign::Positive, 9, 30)?;
+    /// assert_eq!(offset.as_str(), "+09:30");
+    ///
+    /// let unknown_local_offset = TimeOffsetString::from_sign_and_hm(TimeOffsetSign::Negative, 0, 0)?;
+    /// assert_eq!(unknown_local_offset.as_str(), "-00:00");
+    ///
+    /// assert!(
+    ///     TimeOffsetString::from_sign_and_hm(TimeOffsetSign::Negative, 24, 0).is_err(),
+    ///     "-24:00 is invaild time"
+    /// );
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_sign_and_hm(sign: TimeOffsetSign, hour_abs: u8, minute: u8) -> Result<Self, Error> {
+        TimeNumOffsetColonString::from_sign_and_hm(sign, hour_abs, minute).map(Into::into)
+    }
+
+    /// Creates a new `TimeNumOffsetColonStr` from the given minutes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::TimeOffsetString;
+    /// let offset = TimeOffsetString::from_hm_signed(-9, 0)?;
+    /// assert_eq!(offset.as_str(), "-09:00");
+    ///
+    /// let unknown_local_offset = TimeOffsetString::from_hm_signed(0, 0)?;
+    /// assert_eq!(unknown_local_offset.as_str(), "+00:00");
+    ///
+    /// assert!( TimeOffsetString::from_hm_signed(-24, 0).is_err(), "-24:00 is invaild time");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_hm_signed(hour: i8, minute: u8) -> Result<Self, Error> {
+        TimeNumOffsetColonString::from_hm_signed(hour, minute).map(Into::into)
     }
 
     /// Returns a `&TimeOffsetStr` for the string.
@@ -161,6 +260,28 @@ impl AsMut<TimeOffsetStr> for TimeOffsetString {
     #[inline]
     fn as_mut(&mut self) -> &mut TimeOffsetStr {
         self
+    }
+}
+
+impl From<&TimeNumOffsetColonStr> for TimeOffsetString {
+    #[inline]
+    fn from(v: &TimeNumOffsetColonStr) -> TimeOffsetString {
+        unsafe {
+            // This is safe because `TimeNumOffsetColonStr` is subset of `TimeOffsetStr`.
+            debug_assert_ok!(validate_bytes(v.as_bytes()));
+            Self::from_bytes_maybe_unchecked(v.as_bytes().to_owned())
+        }
+    }
+}
+
+impl From<TimeNumOffsetColonString> for TimeOffsetString {
+    #[inline]
+    fn from(v: TimeNumOffsetColonString) -> TimeOffsetString {
+        unsafe {
+            // This is safe because `TimeNumOffsetColonStr` is subset of `TimeOffsetStr`.
+            debug_assert_ok!(validate_bytes(v.as_bytes()));
+            Self::from_bytes_maybe_unchecked(v.as_bytes().to_owned())
+        }
     }
 }
 
