@@ -409,7 +409,7 @@ impl TimeOffsetStr {
     /// Note that both `+00:00` and `-00:00` is considered as 0 minutes offset.
     /// RFC 3339 defines semantics of `-00:00` as "unknown local offset".
     /// If your application should be aware of that semantics, use
-    /// [`is_unknown_local_offset`] or [`sign`] to distinguish them.
+    /// [`is_unknown_local_offset`] method or [`sign`] method to distinguish them.
     ///
     /// # Examples
     ///
@@ -440,6 +440,9 @@ impl TimeOffsetStr {
     /// assert!(negative0.is_unknown_local_offset(), "unknown local offset");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
+    ///
+    /// [`is_unknown_local_offset`]: TimeOffsetStr::is_unknown_local_offset
+    /// [`sign`]: TimeOffsetStr::sign
     #[inline]
     #[must_use]
     pub fn in_minutes(&self) -> i16 {

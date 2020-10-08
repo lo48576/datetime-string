@@ -606,7 +606,6 @@ mod tests {
 
     #[test]
     fn validate_bytes() {
-        s_validate(b"2001-06-17T12:34:56Z").expect("HERE");
         assert!(s_validate(b"2001-06-17T12:34:56Z").is_ok());
         assert!(s_validate(b"2001-06-17T12:34:56-00:00").is_ok());
         assert!(s_validate(b"2001-06-17T12:34:56-12:30").is_ok());

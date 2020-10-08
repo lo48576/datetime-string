@@ -14,7 +14,7 @@ cache:
 
 variables:
   # Minimum supported Rust version.
-  MSRV: '1.46.0'
+  MSRV: '1.47.0'
   # Rust version.
   RUST_VERSION: stable
   # Features options (such as `--all-features` or `--no-default-features --features=foo`.
@@ -117,3 +117,15 @@ test:beta:all-features:
   variables:
     RUST_VERSION: beta
     FEATURES: --all-features
+
+test:miri:
+  stage: test
+  before_script:
+    - |
+      MIRI_NIGHTLY=nightly-$(curl -s https://rust-lang.github.io/rustup-components-history/x86_64-unknown-linux-gnu/miri)
+      echo "Installing latest nightly with Miri: $MIRI_NIGHTLY"
+      rustup set profile minimal
+      rustup default "$MIRI_NIGHTLY"
+      rustup component add miri
+  script:
+    - cargo miri test --all-features

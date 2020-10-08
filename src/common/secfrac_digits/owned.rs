@@ -5,11 +5,13 @@ use core::{convert::TryFrom, fmt, ops, str};
 
 use alloc::{string::String, vec::Vec};
 
-use crate::Error;
+use crate::{ConversionError, Error};
 
 use super::{validate_bytes, SecfracDigitsStr};
 
 /// String slice for digits of fractions of a second.
+///
+/// Available when `alloc` feature is enabled.
 ///
 /// Note that values of this type cannot be not empty string.
 ///
@@ -210,15 +212,32 @@ impl TryFrom<&str> for SecfracDigitsString {
 }
 
 impl TryFrom<Vec<u8>> for SecfracDigitsString {
-    type Error = Error;
+    type Error = ConversionError<Vec<u8>>;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
-        validate_bytes(&v)?;
-        Ok(unsafe {
-            // This is safe because the value is successfully validated.
-            Self::from_bytes_maybe_unchecked(v)
-        })
+        match validate_bytes(&v) {
+            Ok(_) => Ok(unsafe {
+                // This is safe because the value is successfully validated.
+                Self::from_bytes_maybe_unchecked(v)
+            }),
+            Err(e) => Err(ConversionError::new(v, e)),
+        }
+    }
+}
+
+impl TryFrom<String> for SecfracDigitsString {
+    type Error = ConversionError<String>;
+
+    #[inline]
+    fn try_from(v: String) -> Result<Self, Self::Error> {
+        match validate_bytes(v.as_bytes()) {
+            Ok(_) => Ok(unsafe {
+                // This is safe because the value is successfully validated.
+                Self::from_bytes_maybe_unchecked(v.into_bytes())
+            }),
+            Err(e) => Err(ConversionError::new(v, e)),
+        }
     }
 }
 

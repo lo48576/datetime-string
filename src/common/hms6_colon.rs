@@ -5,7 +5,6 @@
 //! [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
 use core::{
-    cmp::Ordering,
     convert::TryFrom,
     fmt,
     ops::{self, Range},
@@ -48,13 +47,13 @@ const SECOND_MAX: u8 = 60;
 ///
 /// [`partial-time`]: https://tools.ietf.org/html/rfc3339#section-5.6
 fn validate_bytes(s: &[u8]) -> Result<(), Error> {
-    let s: &[u8; HMS_LEN] = match s.len().cmp(&HMS_LEN) {
-        Ordering::Greater => return Err(ErrorKind::TooLong.into()),
-        Ordering::Less => return Err(ErrorKind::TooShort.into()),
-        Ordering::Equal => {
-            TryFrom::try_from(s).expect("Should never fail because the length is equal")
+    let s: &[u8; HMS_LEN] = TryFrom::try_from(s).map_err(|_| {
+        if s.len() < HMS_LEN {
+            ErrorKind::TooShort
+        } else {
+            ErrorKind::TooLong
         }
-    };
+    })?;
 
     if (s[2] != b':') || (s[5] != b':') {
         return Err(ErrorKind::InvalidSeparator.into());
@@ -240,6 +239,29 @@ impl Hms6ColonStr {
     #[inline]
     pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
+    }
+
+    /// Assigns the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let mut buf: [u8; 8] = *b"12:34:56";
+    /// let time = Hms6ColonStr::from_bytes_mut(&mut buf[..])?;
+    /// assert_eq!(time.as_str(), "12:34:56");
+    ///
+    /// let newtime = Hms6ColonStr::from_str("01:01:01")?;
+    ///
+    /// time.assign(newtime);
+    /// assert_eq!(time.as_str(), "01:01:01");
+    /// assert_eq!(buf, *b"01:01:01");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn assign(&mut self, v: &Self) {
+        debug_assert_eq!(self.0.len(), v.0.len());
+        self.0.copy_from_slice(&v.0);
     }
 
     /// Returns a string slice.
@@ -752,6 +774,30 @@ impl Hms6ColonStr {
 
         Ok(())
     }
+
+    /// Retruns the seconds from the start of the day.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use datetime_string::common::Hms6ColonStr;
+    /// let time = Hms6ColonStr::from_str("12:34:56")?;
+    /// assert_eq!(time.to_seconds(), 12 * 60 * 60 + 34 * 60 + 56);
+    ///
+    /// let zero = Hms6ColonStr::from_str("00:00:00")?;
+    /// assert_eq!(zero.to_seconds(), 0);
+    ///
+    /// let last = Hms6ColonStr::from_str("23:59:59")?;
+    /// assert_eq!(last.to_seconds(), 24 * 60 * 60 - 1);
+    ///
+    /// let last_leap = Hms6ColonStr::from_str("23:59:60")?;
+    /// assert_eq!(last_leap.to_seconds(), 24 * 60 * 60);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn to_seconds(&self) -> u32 {
+        u32::from(self.hour()) * 3600 + u32::from(self.minute()) * 60 + u32::from(self.second())
+    }
 }
 
 #[cfg(feature = "alloc")]
@@ -932,6 +978,35 @@ impl Hms6ColonString {
     unsafe fn new_maybe_unchecked(s: [u8; 8]) -> Self {
         debug_assert_ok!(validate_bytes(&s));
         Self(s)
+    }
+
+    /// Returns `00:00:00`.
+    #[inline]
+    #[must_use]
+    fn zero() -> Self {
+        unsafe {
+            // This is safe because `00:00:00` is valid.
+            debug_assert_safe_version_ok!(Self::try_from(*b"00:00:00"));
+            Self::new_maybe_unchecked(*b"00:00:00")
+        }
+    }
+
+    /// Creates a new `Hms6ColonString` from the given time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Hms6ColonString;
+    /// let time = Hms6ColonString::from_hms(12, 34, 56)?;
+    /// assert_eq!(time.as_str(), "12:34:56");
+    ///
+    /// assert!(Hms6ColonString::from_hms(0, 0, 61).is_err(), "00:00:61 is invaild time");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_hms(hour: u8, minute: u8, second: u8) -> Result<Self, Error> {
+        let mut v = Self::zero();
+        v.set_time(hour, minute, second)?;
+        Ok(v)
     }
 
     /// Returns a `&Hms6ColonStr` for the string.

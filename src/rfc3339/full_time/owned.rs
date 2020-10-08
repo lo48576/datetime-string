@@ -10,11 +10,13 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::Error;
+use crate::{ConversionError, Error};
 
 use super::{validate_bytes, FullTimeStr};
 
 /// Owned string for a time in RFC 3339 [`full-time`] format, such as `12:34:56.7890-23:12`.
+///
+/// Available when `alloc` feature is enabled.
 ///
 /// # Examples
 ///
@@ -210,15 +212,32 @@ impl TryFrom<&str> for FullTimeString {
 }
 
 impl TryFrom<Vec<u8>> for FullTimeString {
-    type Error = Error;
+    type Error = ConversionError<Vec<u8>>;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
-        validate_bytes(&v)?;
-        Ok(unsafe {
-            // This is safe because the value is successfully validated.
-            Self::from_bytes_maybe_unchecked(v)
-        })
+        match validate_bytes(&v) {
+            Ok(_) => Ok(unsafe {
+                // This is safe because the value is successfully validated.
+                Self::from_bytes_maybe_unchecked(v)
+            }),
+            Err(e) => Err(ConversionError::new(v, e)),
+        }
+    }
+}
+
+impl TryFrom<String> for FullTimeString {
+    type Error = ConversionError<String>;
+
+    #[inline]
+    fn try_from(v: String) -> Result<Self, Self::Error> {
+        match validate_bytes(v.as_bytes()) {
+            Ok(_) => Ok(unsafe {
+                // This is safe because the value is successfully validated.
+                Self::from_bytes_maybe_unchecked(v.into_bytes())
+            }),
+            Err(e) => Err(ConversionError::new(v, e)),
+        }
     }
 }
 

@@ -5,7 +5,6 @@
 //! [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
 use core::{
-    cmp::Ordering,
     convert::TryFrom,
     fmt,
     ops::{self, Range},
@@ -13,7 +12,7 @@ use core::{
 };
 
 use crate::{
-    datetime::{validate_ym0d, validate_ym1d},
+    datetime::{is_leap_year, validate_ym0d, validate_ym1d},
     parse::{parse_digits2, parse_digits4},
     str::{write_digit2, write_digit4},
 };
@@ -36,13 +35,13 @@ const MDAY_RANGE: Range<usize> = 8..10;
 ///
 /// [`full-date`]: https://tools.ietf.org/html/rfc3339#section-5.6
 fn validate_bytes(s: &[u8]) -> Result<(), Error> {
-    let s: &[u8; FULL_DATE_LEN] = match s.len().cmp(&FULL_DATE_LEN) {
-        Ordering::Greater => return Err(ErrorKind::TooLong.into()),
-        Ordering::Less => return Err(ErrorKind::TooShort.into()),
-        Ordering::Equal => {
-            TryFrom::try_from(s).expect("Should never fail because the length is equal")
+    let s: &[u8; FULL_DATE_LEN] = TryFrom::try_from(s).map_err(|_| {
+        if s.len() < FULL_DATE_LEN {
+            ErrorKind::TooShort
+        } else {
+            ErrorKind::TooLong
         }
-    };
+    })?;
 
     if (s[4] != b'-') || (s[7] != b'-') {
         return Err(ErrorKind::InvalidSeparator.into());
@@ -222,6 +221,29 @@ impl Ymd8HyphenStr {
     #[inline]
     pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
+    }
+
+    /// Assigns the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let mut buf: [u8; 10] = *b"1999-12-31";
+    /// let date = Ymd8HyphenStr::from_bytes_mut(&mut buf[..])?;
+    /// assert_eq!(date.as_str(), "1999-12-31");
+    ///
+    /// let newdate = Ymd8HyphenStr::from_str("2000-01-01")?;
+    ///
+    /// date.assign(newdate);
+    /// assert_eq!(date.as_str(), "2000-01-01");
+    /// assert_eq!(buf, *b"2000-01-01");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn assign(&mut self, v: &Self) {
+        debug_assert_eq!(self.0.len(), v.0.len());
+        self.0.copy_from_slice(&v.0);
     }
 
     /// Returns a string slice.
@@ -815,6 +837,101 @@ impl Ymd8HyphenStr {
     pub fn set_ym1d(&mut self, year: u16, month1: u8, mday: u8) -> Result<(), Error> {
         self.set_ym0d(year, month1.wrapping_sub(1), mday)
     }
+
+    /// Returns the 0-based day of the year, i.e. days since January 1 of the year.
+    ///
+    /// Note that this value is 0-based.
+    /// January 1 is 0 days since January 1 of the year.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("1970-01-01")?;
+    /// assert_eq!(date.yday0(), 0, "0 for the 1st day of the year, because this is 0-based value");
+    ///
+    /// let date2 = Ymd8HyphenStr::from_str("1970-12-31")?;
+    /// assert_eq!(date2.yday0(), 364);
+    ///
+    /// let leap_last = Ymd8HyphenStr::from_str("2000-12-31")?;
+    /// assert_eq!(leap_last.yday0(), 365, "2000-02-29 exists");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn yday0(&self) -> u16 {
+        self.yday1() - 1
+    }
+
+    /// Returns the 1-based day of the year.
+    ///
+    /// Note that this value is 1-based.
+    /// January 1 is 1st day of the year.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("1970-01-01")?;
+    /// assert_eq!(date.yday1(), 1, "1 for the 1st day of the year, because this is 1-based value");
+    ///
+    /// let date2 = Ymd8HyphenStr::from_str("1970-12-31")?;
+    /// assert_eq!(date2.yday1(), 365);
+    ///
+    /// let leap_last = Ymd8HyphenStr::from_str("2000-12-31")?;
+    /// assert_eq!(leap_last.yday1(), 366, "2000-02-29 exists");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn yday1(&self) -> u16 {
+        /// `yday`s of 0th day for each months of non-leap year.
+        const BASE_YDAYS: [u16; 12] = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+
+        let month0 = self.month0();
+        let non_leap_yday = BASE_YDAYS[usize::from(month0)] + u16::from(self.mday());
+
+        if month0 > 1 && is_leap_year(self.year()) {
+            non_leap_yday + 1
+        } else {
+            non_leap_yday
+        }
+    }
+
+    /// Returns the days from the epoch (1970-01-01).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenStr;
+    /// let date = Ymd8HyphenStr::from_str("1971-01-01")?;
+    /// assert_eq!(date.days_since_epoch(), 365);
+    ///
+    /// let date2 = Ymd8HyphenStr::from_str("1969-01-01")?;
+    /// assert_eq!(date2.days_since_epoch(), -365);
+    ///
+    /// let epoch = Ymd8HyphenStr::from_str("1970-01-01")?;
+    /// assert_eq!(epoch.days_since_epoch(), 0);
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn days_since_epoch(&self) -> i32 {
+        let tm_year = i32::from(self.year()) - 1900;
+
+        // See "4.16. Seconds Since the Epoch" section of POSIX
+        // (<https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_16>).
+        //
+        // > If the year is \<1970 or the value is negative, the relationship is
+        // > undefined. If the year is >=1970 and the value is non-negative, the
+        // > value is related to a Coordinated Universal Time name according to
+        // > the C-language expression, where `tm_sec`, `tm_min`, `tm_hour`,
+        // > `tm_yday`, and `tm_year` are all integer types:
+        // >
+        // > ```
+        // > tm_sec + tm_min*60 + tm_hour*3600 + tm_yday*86400 +
+        // >     (tm_year-70)*31536000 + ((tm_year-69)/4)*86400 -
+        // >     ((tm_year-1)/100)*86400 + ((tm_year+299)/400)*86400
+        // > ```
+        (i32::from(self.yday1()) - 1) + (tm_year - 70) * 365 + (tm_year - 69) / 4
+            - (tm_year - 1) / 100
+            + (tm_year + 299) / 400
+    }
 }
 
 #[cfg(feature = "alloc")]
@@ -994,6 +1111,57 @@ impl Ymd8HyphenString {
     unsafe fn new_maybe_unchecked(s: [u8; 10]) -> Self {
         debug_assert_ok!(validate_bytes(&s));
         Self(s)
+    }
+
+    /// Returns the minimum date.
+    #[inline]
+    #[must_use]
+    fn min() -> Self {
+        unsafe {
+            // This is safe because `0000-01-01` is valid.
+            debug_assert_safe_version_ok!(Self::try_from(*b"0000-01-01"));
+            Self::new_maybe_unchecked(*b"0000-01-01")
+        }
+    }
+
+    /// Creates a new `Ymd8HyphenString` from the given date.
+    ///
+    /// Note that `month0` is 0-based, i.e. January is 0, February is 1, and so on.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenString;
+    /// let date = Ymd8HyphenString::from_ym0d(2001, 11, 31)?;
+    /// assert_eq!(date.as_str(), "2001-12-31");
+    ///
+    /// assert!(Ymd8HyphenString::from_ym0d(2001, 1, 29).is_err(), "2001-02-29 is invaild date");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_ym0d(year: u16, month0: u8, mday: u8) -> Result<Self, Error> {
+        let mut v = Self::min();
+        v.set_ym0d(year, month0, mday)?;
+        Ok(v)
+    }
+
+    /// Creates a new `Ymd8HyphenString` from the given date.
+    ///
+    /// Note that `month1` is 1-based, i.e. January is 1, February is 2, and so on.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::Ymd8HyphenString;
+    /// let date = Ymd8HyphenString::from_ym1d(2001, 12, 31)?;
+    /// assert_eq!(date.as_str(), "2001-12-31");
+    ///
+    /// assert!(Ymd8HyphenString::from_ym1d(2001, 2, 29).is_err(), "2001-02-29 is invaild date");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_ym1d(year: u16, month1: u8, mday: u8) -> Result<Self, Error> {
+        let mut v = Self::min();
+        v.set_ym1d(year, month1, mday)?;
+        Ok(v)
     }
 
     /// Returns a `&Ymd8HyphenStr` for the string.

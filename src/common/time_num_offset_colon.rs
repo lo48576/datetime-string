@@ -5,7 +5,6 @@
 //! [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
 
 use core::{
-    cmp::Ordering,
     convert::TryFrom,
     fmt,
     ops::{self, Range, RangeTo},
@@ -38,13 +37,13 @@ const MINUTE_MAX: u8 = 59;
 ///
 /// [`time-numoffset`]: https://tools.ietf.org/html/rfc3339#section-5.6
 fn validate_bytes(s: &[u8]) -> Result<(), Error> {
-    let s: &[u8; NUM_OFFSET_LEN] = match s.len().cmp(&NUM_OFFSET_LEN) {
-        Ordering::Greater => return Err(ErrorKind::TooLong.into()),
-        Ordering::Less => return Err(ErrorKind::TooShort.into()),
-        Ordering::Equal => {
-            TryFrom::try_from(s).expect("Should never fail because the length is equal")
+    let s: &[u8; NUM_OFFSET_LEN] = TryFrom::try_from(s).map_err(|_| {
+        if s.len() < NUM_OFFSET_LEN {
+            ErrorKind::TooShort
+        } else {
+            ErrorKind::TooLong
         }
-    };
+    })?;
 
     if ((s[0] != b'+') && (s[0] != b'-')) || (s[3] != b':') {
         return Err(ErrorKind::InvalidSeparator.into());
@@ -229,6 +228,29 @@ impl TimeNumOffsetColonStr {
     #[inline]
     pub fn from_bytes_mut(s: &mut [u8]) -> Result<&mut Self, Error> {
         TryFrom::try_from(s)
+    }
+
+    /// Assigns the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonStr;
+    /// let mut buf: [u8; 6] = *b"+09:00";
+    /// let offset = TimeNumOffsetColonStr::from_bytes_mut(&mut buf[..])?;
+    /// assert_eq!(offset.as_str(), "+09:00");
+    ///
+    /// let newoffset = TimeNumOffsetColonStr::from_str("-00:00")?;
+    ///
+    /// offset.assign(newoffset);
+    /// assert_eq!(offset.as_str(), "-00:00");
+    /// assert_eq!(buf, *b"-00:00");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    pub fn assign(&mut self, v: &Self) {
+        debug_assert_eq!(self.0.len(), v.0.len());
+        self.0.copy_from_slice(&v.0);
     }
 
     /// Returns a string slice.
@@ -852,7 +874,7 @@ impl TimeNumOffsetColonStr {
     /// Note that both `+00:00` and `-00:00` is considered as 0 minutes offset.
     /// RFC 3339 defines semantics of `-00:00` as "unknown local offset".
     /// If your application should be aware of that semantics, use
-    /// [`is_unknown_local_offset`] or [`sign`] to distinguish them.
+    /// [`is_unknown_local_offset`] method or [`sign`] method to distinguish them.
     ///
     /// # Examples
     ///
@@ -881,6 +903,9 @@ impl TimeNumOffsetColonStr {
     /// assert!(negative0.is_unknown_local_offset(), "unknown local offset");
     /// # Ok::<_, datetime_string::Error>(())
     /// ```
+    ///
+    /// [`is_unknown_local_offset`]: TimeNumOffsetColonStr::is_unknown_local_offset
+    /// [`sign`]: TimeNumOffsetColonStr::sign
     #[must_use]
     pub fn in_minutes(&self) -> i16 {
         let abs_min = self.hour_abs() as i16 * 60 + self.minute() as i16;
@@ -1147,6 +1172,110 @@ impl TimeNumOffsetColonString {
     unsafe fn new_maybe_unchecked(s: [u8; 6]) -> Self {
         debug_assert_ok!(validate_bytes(&s));
         Self(s)
+    }
+
+    /// Returns `+00:00`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonString;
+    /// let utc = TimeNumOffsetColonString::utc();
+    /// assert_eq!(utc.as_str(), "+00:00");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn utc() -> Self {
+        unsafe {
+            // This is safe because `+00:00` is valid.
+            debug_assert_safe_version_ok!(Self::try_from(*b"+00:00"));
+            Self::new_maybe_unchecked(*b"+00:00")
+        }
+    }
+
+    /// Returns `-00:00`, which is defined in RFC 3339 to indicate "unknown local offset".
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonString;
+    /// let unknown_local_offset = TimeNumOffsetColonString::unknown_local_offset();
+    /// assert_eq!(unknown_local_offset.as_str(), "-00:00");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn unknown_local_offset() -> Self {
+        unsafe {
+            // This is safe because `-00:00` is valid.
+            debug_assert_safe_version_ok!(Self::try_from(*b"-00:00"));
+            Self::new_maybe_unchecked(*b"-00:00")
+        }
+    }
+
+    /// Creates a new `TimeNumOffsetColonStr` from the given minutes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonString;
+    /// let time = TimeNumOffsetColonString::from_minutes(9 * 60)?;
+    /// assert_eq!(time.as_str(), "+09:00");
+    ///
+    /// assert!(TimeNumOffsetColonString::from_minutes(-24 * 60).is_err(), "-24:00 is invaild time");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_minutes(minutes: i16) -> Result<Self, Error> {
+        let mut v = Self::utc();
+        v.set_in_minutes(minutes)?;
+        Ok(v)
+    }
+
+    /// Creates a new `TimeNumOffsetColonStr` from the given minutes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonString;
+    /// use datetime_string::common::TimeOffsetSign;
+    /// let time = TimeNumOffsetColonString::from_sign_and_hm(TimeOffsetSign::Positive, 9, 30)?;
+    /// assert_eq!(time.as_str(), "+09:30");
+    ///
+    /// let unknown_local_offset = TimeNumOffsetColonString::from_sign_and_hm(TimeOffsetSign::Negative, 0, 0)?;
+    /// assert_eq!(unknown_local_offset.as_str(), "-00:00");
+    ///
+    /// assert!(
+    ///     TimeNumOffsetColonString::from_sign_and_hm(TimeOffsetSign::Negative, 24, 0).is_err(),
+    ///     "-24:00 is invaild time"
+    /// );
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_sign_and_hm(sign: TimeOffsetSign, hour_abs: u8, minute: u8) -> Result<Self, Error> {
+        let mut v = Self::utc();
+        v.set_sign_and_time(sign, hour_abs, minute)?;
+        Ok(v)
+    }
+
+    /// Creates a new `TimeNumOffsetColonStr` from the given minutes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::common::TimeNumOffsetColonString;
+    /// let offset = TimeNumOffsetColonString::from_hm_signed(-9, 0)?;
+    /// assert_eq!(offset.as_str(), "-09:00");
+    ///
+    /// let unknown_local_offset = TimeNumOffsetColonString::from_hm_signed(0, 0)?;
+    /// assert_eq!(unknown_local_offset.as_str(), "+00:00");
+    ///
+    /// assert!( TimeNumOffsetColonString::from_hm_signed(-24, 0).is_err(), "-24:00 is invaild time");
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    pub fn from_hm_signed(hour: i8, minute: u8) -> Result<Self, Error> {
+        let mut v = Self::utc();
+        v.set_time_signed(hour, minute)?;
+        Ok(v)
     }
 
     /// Returns a `&TimeNumOffsetColonStr` for the string.

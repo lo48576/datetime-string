@@ -7,11 +7,13 @@ use core::{convert::TryFrom, fmt, ops, str};
 
 use alloc::{string::String, vec::Vec};
 
-use crate::Error;
+use crate::{ConversionError, Error};
 
 use super::{validate_bytes, SecfracStr};
 
 /// Owned string for a time in RFC 3339 [`time-secfrac`] format, such as `.7890`.
+///
+/// Available when `alloc` feature is enabled.
 ///
 /// To create a value of this type, use [`str::parse`] method or
 /// [`std::convert::TryFrom`] trait, or convert from `&SecfracStr`.
@@ -210,15 +212,32 @@ impl TryFrom<&str> for SecfracString {
 }
 
 impl TryFrom<Vec<u8>> for SecfracString {
-    type Error = Error;
+    type Error = ConversionError<Vec<u8>>;
 
     #[inline]
     fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
-        validate_bytes(&v)?;
-        Ok(unsafe {
-            // This is safe because the value is successfully validated.
-            Self::from_bytes_maybe_unchecked(v)
-        })
+        match validate_bytes(&v) {
+            Ok(_) => Ok(unsafe {
+                // This is safe because the value is successfully validated.
+                Self::from_bytes_maybe_unchecked(v)
+            }),
+            Err(e) => Err(ConversionError::new(v, e)),
+        }
+    }
+}
+
+impl TryFrom<String> for SecfracString {
+    type Error = ConversionError<String>;
+
+    #[inline]
+    fn try_from(v: String) -> Result<Self, Self::Error> {
+        match validate_bytes(v.as_bytes()) {
+            Ok(_) => Ok(unsafe {
+                // This is safe because the value is successfully validated.
+                Self::from_bytes_maybe_unchecked(v.into_bytes())
+            }),
+            Err(e) => Err(ConversionError::new(v, e)),
+        }
     }
 }
 
