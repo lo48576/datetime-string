@@ -19,6 +19,8 @@
 //!     + Enabled by default.
 //!     + Provides types and functions which requires `std` crate.
 //!       Examples of stuff in `std` is `std::error::Error`.
+//! * `chrono04`
+//!     + Provides some conversions between types in `chrono` crate v0.4 and this crate.
 //! * `serde`
 //!     + Provides `serde::{Serilaize, Deserialize}` implementations for string types.
 //! * `alloc_with_serde`
