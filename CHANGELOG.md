@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+
+## [0.2.1]
+
 * Added `chrono` v0.4 integration.
     + Enabled by `chrono04` feature.
 
@@ -30,6 +33,7 @@
         - `From<&rfc3339::TimeOffsetStr> for chrono::FixedOffset`
     + `rfc3339::PartialTimeStr` and `chrono::NaiveTime`
         - `rfc3339::PartialTimeStr::to_chrono_naive_time(&self) -> chrono::NaiveTime`
+
 
 ## [0.2.0]
 
@@ -74,12 +78,15 @@
       `ConversionError<T>` allows users to get the value back without extra
       allocation overhead, when it is not convertible to the target type.
 
+
 ## [0.1.0]
 
 Initial release.
 
 Mainly RFC 3339 datetime types are supported.
 
-[Unreleased]: <https://github.com/lo48576/fbxcel/compare/v0.2.0...develop>
+
+[Unreleased]: <https://github.com/lo48576/fbxcel/compare/v0.2.1...develop>
+[0.2.1]: <https://github.com/lo48576/fbxcel/releases/tag/v0.2.1>
 [0.2.0]: <https://github.com/lo48576/fbxcel/releases/tag/v0.2.0>
 [0.1.0]: <https://github.com/lo48576/fbxcel/releases/tag/v0.1.0>
