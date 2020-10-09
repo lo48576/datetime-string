@@ -523,6 +523,14 @@ impl<'a> From<&'a TimeOffsetStr> for &'a str {
     }
 }
 
+#[cfg(feature = "chrono04")]
+impl From<&TimeOffsetStr> for chrono04::FixedOffset {
+    #[inline]
+    fn from(v: &TimeOffsetStr) -> Self {
+        Self::east(i32::from(v.in_minutes()) * 60)
+    }
+}
+
 impl<'a> TryFrom<&'a [u8]> for &'a TimeOffsetStr {
     type Error = Error;
 

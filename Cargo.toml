@@ -1,6 +1,6 @@
 [package]
 name = "datetime-string"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["YOSHIOKA Takuma <lo48576@hard-wi.red>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -23,6 +23,7 @@ std = ["alloc"]
 std_with_serde = ["std", "serde/std"]
 
 [dependencies]
+chrono04 = { package = "chrono", version = "0.4.19", default-features = false, optional = true }
 serde = { version = "1.0.116", default-features = false, features = ["derive"], optional = true }
 
 [dev-dependencies]

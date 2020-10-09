@@ -845,6 +845,23 @@ impl<'a> From<&'a Hms6ColonStr> for &'a str {
     }
 }
 
+#[cfg(feature = "chrono04")]
+impl From<&Hms6ColonStr> for chrono04::NaiveTime {
+    fn from(v: &Hms6ColonStr) -> Self {
+        let hour = u32::from(v.hour());
+        let minute = u32::from(v.minute());
+        let second = u32::from(v.second());
+
+        // Note that `chrono04::NaiveTime::from_hms()` does not allow leap second.
+        // See <https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveTime.html#representing-leap-seconds>.
+        if second == 60 {
+            Self::from_hms_milli(hour, minute, 59, 1000)
+        } else {
+            Self::from_hms(hour, minute, second)
+        }
+    }
+}
+
 impl<'a> TryFrom<&'a [u8]> for &'a Hms6ColonStr {
     type Error = Error;
 
@@ -1157,6 +1174,16 @@ impl TryFrom<[u8; 8]> for Hms6ColonString {
             // This is safe because the value is successfully validated.
             Self::new_maybe_unchecked(v)
         })
+    }
+}
+
+#[cfg(feature = "chrono04")]
+impl From<&chrono04::NaiveTime> for Hms6ColonString {
+    fn from(v: &chrono04::NaiveTime) -> Self {
+        use chrono04::Timelike;
+
+        Self::from_hms(v.hour() as u8, v.minute() as u8, v.second() as u8)
+            .expect("`chrono04::NaiveTime` must always have a valid time")
     }
 }
 

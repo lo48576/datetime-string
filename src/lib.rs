@@ -19,6 +19,8 @@
 //!     + Enabled by default.
 //!     + Provides types and functions which requires `std` crate.
 //!       Examples of stuff in `std` is `std::error::Error`.
+//! * `chrono04`
+//!     + Provides some conversions between types in `chrono` crate v0.4 and this crate.
 //! * `serde`
 //!     + Provides `serde::{Serilaize, Deserialize}` implementations for string types.
 //! * `alloc_with_serde`
@@ -64,9 +66,9 @@
 //! let mut date = Ymd8HyphenString::try_from("1999-12-31")?;
 //!
 //! assert_eq!(date.year(), 1999);
-//! // 0-based month.
-//! assert_eq!(date.month1(), 12);
 //! // 1-based month.
+//! assert_eq!(date.month1(), 12);
+//! // 0-based month.
 //! assert_eq!(date.month0(), 11);
 //! // Day of a month.
 //! assert_eq!(date.mday(), 31);
