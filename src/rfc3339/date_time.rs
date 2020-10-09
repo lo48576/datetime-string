@@ -428,6 +428,46 @@ impl DateTimeStr {
             FullTimeStr::from_bytes_maybe_unchecked_mut(s)
         }
     }
+
+    /// Converts the time to [`chrono::DateTime<FixedOffset>`][`chrono04::DateTime`].
+    ///
+    /// Note that this truncates subnanosecond secfrac.
+    ///
+    /// Enabled by `chrono04` feature.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::DateTimeStr;
+    /// use chrono04::{FixedOffset, TimeZone};
+    ///
+    /// let datetime = DateTimeStr::from_str("1999-12-31T12:34:56.01234567899999+09:00")?;
+    /// assert_eq!(
+    ///     datetime.to_chrono_date_time(),
+    ///     FixedOffset::east(9 * 60 * 60).ymd(1999, 12, 31).and_hms_nano(12, 34, 56, 12_345_678)
+    /// );
+    ///
+    /// let leap = DateTimeStr::from_str("2001-12-31T23:59:60.876543210999-00:00")?;
+    /// assert_eq!(
+    ///     leap.to_chrono_date_time(),
+    ///     FixedOffset::east(0).ymd(2001, 12, 31).and_hms_nano(23, 59, 59, 1_876_543_210)
+    /// );
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[cfg(feature = "chrono04")]
+    pub fn to_chrono_date_time(&self) -> chrono04::DateTime<chrono04::FixedOffset> {
+        use chrono04::TimeZone;
+
+        let (date_s, time_s) = self.decompose();
+        let date: chrono04::NaiveDate = date_s.into();
+        let time: chrono04::NaiveTime = time_s.partial_time().to_chrono_naive_time();
+        let offset: chrono04::FixedOffset = time_s.offset().into();
+
+        offset
+            .from_local_datetime(&date.and_time(time))
+            .single()
+            .expect("Should never fail: fixed time offset is not affected by summer time")
+    }
 }
 
 impl AsRef<[u8]> for DateTimeStr {
