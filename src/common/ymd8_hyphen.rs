@@ -979,6 +979,17 @@ impl<'a> From<&'a Ymd8HyphenStr> for &'a str {
     }
 }
 
+#[cfg(feature = "chrono04")]
+impl From<&Ymd8HyphenStr> for chrono04::NaiveDate {
+    fn from(v: &Ymd8HyphenStr) -> Self {
+        let year = i32::from(v.year());
+        let month1 = u32::from(v.month1());
+        let mday = u32::from(v.mday());
+
+        Self::from_ymd(year, month1, mday)
+    }
+}
+
 impl<'a> TryFrom<&'a [u8]> for &'a Ymd8HyphenStr {
     type Error = Error;
 
@@ -1283,6 +1294,29 @@ impl From<&Ymd8HyphenStr> for Ymd8HyphenString {
             // This is safe because the value is already validated.
             Self::new_maybe_unchecked(*v.as_bytes_fixed_len())
         }
+    }
+}
+
+#[cfg(feature = "chrono04")]
+impl TryFrom<&chrono04::NaiveDate> for Ymd8HyphenString {
+    type Error = Error;
+
+    /// Converts the given date into `Ymd8HyphenString`.
+    ///
+    /// # Failures
+    ///
+    /// Fails if the year is less than 0 or greater than 9999.
+    fn try_from(v: &chrono04::NaiveDate) -> Result<Self, Self::Error> {
+        use chrono04::Datelike;
+
+        let year = v.year();
+        if (year < 0) || (year > 9999) {
+            return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Year).into());
+        }
+        Ok(
+            Self::from_ym1d(v.year() as u16, v.month() as u8, v.day() as u8)
+                .expect("`chrono04::NaiveTime` must always have a valid date"),
+        )
     }
 }
 

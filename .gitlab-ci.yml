@@ -75,6 +75,12 @@ test:msrv:no-default-features:
     RUST_VERSION: $MSRV
     FEATURES: --no-default-features
 
+test:msrv:chrono04:
+  <<: *test_msrv
+  variables:
+    RUST_VERSION: $MSRV
+    FEATURES: --no-default-features --features=chrono04
+
 test:msrv:serde:
   <<: *test_msrv
   variables:

@@ -1041,6 +1041,14 @@ impl<'a> From<&'a TimeNumOffsetColonStr> for &'a str {
     }
 }
 
+#[cfg(feature = "chrono04")]
+impl From<&TimeNumOffsetColonStr> for chrono04::FixedOffset {
+    #[inline]
+    fn from(v: &TimeNumOffsetColonStr) -> Self {
+        Self::east(i32::from(v.in_minutes()) * 60)
+    }
+}
+
 impl<'a> TryFrom<&'a [u8]> for &'a TimeNumOffsetColonStr {
     type Error = Error;
 
@@ -1428,6 +1436,32 @@ impl TryFrom<[u8; 6]> for TimeNumOffsetColonString {
             // This is safe because the value is successfully validated.
             Self::new_maybe_unchecked(v)
         })
+    }
+}
+
+#[cfg(feature = "chrono04")]
+impl TryFrom<&chrono04::FixedOffset> for TimeNumOffsetColonString {
+    type Error = Error;
+
+    /// Converts the given offset into `TimeNumOffsetColonString`.
+    ///
+    /// # Failures
+    ///
+    /// Fails when the second is not zero (for example, `+00:00:30`).
+    fn try_from(v: &chrono04::FixedOffset) -> Result<Self, Self::Error> {
+        let seconds = v.local_minus_utc();
+
+        if seconds % 60 != 0 {
+            // `TimeNumOffsetColonString` can have only offsets with seconds part zero.
+            return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Offset).into());
+        }
+        // `chrono04::offset::FixedOffset` is guaranteed to have time offset
+        // from UTC-23:59:59 to UTC+23:59:59.
+        // This range can be representable by TimeNumOffsetColonString, if the
+        // seconds component is zero.
+        debug_assert!(seconds < i32::from(i16::max_value()));
+        Ok(Self::from_minutes((seconds / 60) as i16)
+            .expect("`chrono04::FixedOffset` must always have a valid time"))
     }
 }
 

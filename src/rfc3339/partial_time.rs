@@ -346,6 +346,39 @@ impl PartialTimeStr {
                 .map(|v| SecfracStr::from_bytes_maybe_unchecked_mut(v))
         }
     }
+
+    /// Converts the time to [`chrono::NaiveTime`][`chrono04::NaiveTime`].
+    ///
+    /// Note that this truncates subnanosecond secfrac.
+    ///
+    /// Enabled by `chrono04` feature.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use datetime_string::rfc3339::PartialTimeStr;
+    /// use chrono04::NaiveTime;
+    ///
+    /// let time = PartialTimeStr::from_str("12:34:56.01234567899999")?;
+    /// assert_eq!(time.to_chrono_naive_time(), NaiveTime::from_hms_nano(12, 34, 56, 12_345_678));
+    ///
+    /// let leap = PartialTimeStr::from_str("23:59:60.876543210999")?;
+    /// assert_eq!(leap.to_chrono_naive_time(), NaiveTime::from_hms_nano(23, 59, 59, 1_876_543_210));
+    /// # Ok::<_, datetime_string::Error>(())
+    /// ```
+    #[cfg(feature = "chrono04")]
+    pub fn to_chrono_naive_time(&self) -> chrono04::NaiveTime {
+        use chrono04::Timelike;
+
+        let hms: chrono04::NaiveTime = self.hms().into();
+        debug_assert!(hms.nanosecond() <= 1_000_000_000);
+        let secfrac: u32 = self
+            .secfrac()
+            .map_or(0, |secfrac| secfrac.digits().nanoseconds());
+        debug_assert!(secfrac < 1_000_000_000);
+        hms.with_nanosecond(hms.nanosecond() + secfrac)
+            .expect("Should never fail: `hms.nanoseconds() + secfrac` is less than 2 seconds")
+    }
 }
 
 impl AsRef<[u8]> for PartialTimeStr {

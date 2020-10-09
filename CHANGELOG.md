@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+* Added `chrono` v0.4 integration.
+    + Enabled by `chrono04` feature.
+
+### Added
+
+* Added `chrono` v0.4 integration.
+    + Enabled by `chrono04` feature.
+    + Note that some conversions are lossy (truncates subnanosecond for example).
+    + `common::Hms6ColonStr{,ing}` and `chrono::NaiveTime`
+        - `From<&common::Hms6ColonStr> for chrono::NaiveTime`
+        - `From<&chrono::NaiveTime> for common::Hms6ColonString`
+    + `common::TimeNumOffsetColonStr{,ing}` and `chrono::FixedOffset`
+        - `From<&common::TimeNumOffsetColonStr> for chrono::FixedOffset`
+        - `TryFrom<&chrono::FixedOffset> for common::TimeNumOffsetColonStr`
+            * Note that `chrono::FixedOffset` can have non-zero seconds (such as `+01:23:45`),
+              but this is not allowed for `common::TimeNumOffsetColonStr{,ing}`.
+    + `common::Ymd8HyphenStr{,ing}` and `chrono::NaiveDate`
+        - `From<&common::Ymd8HyphenStr> for chrono::NaiveDate`
+        - `TryFrom<&chrono::NaiveDate> for common::Ymd8HyphenString`
+            * Note that `chrono::NaiveDate` can have year which is less than
+              zero or larger than 9999, but this is not allowed for
+              `common::Ymd8HyphenStr{,ing}`.
+    + `rfc3339::DateTimeStr` and `chrono::DateTime<chrono::FixedOffset>`
+        - `rfc3339::DateTimeStr::to_chrono_date_time(&self) -> chrono::DateTime<chrono::FixedOffset>`
+    + `rfc3339::TimeOffsetStr` and `chrono::FixedOffset`
+        - `From<&rfc3339::TimeOffsetStr> for chrono::FixedOffset`
+    + `rfc3339::PartialTimeStr` and `chrono::NaiveTime`
+        - `rfc3339::PartialTimeStr::to_chrono_naive_time(&self) -> chrono::NaiveTime`
+
 ## [0.2.0]
 
 * Now `TryFrom<Vec<u8>> for {OwnedString}` impls uses `ConversionError<Vec<u8>>`
