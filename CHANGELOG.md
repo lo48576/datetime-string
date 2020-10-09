@@ -10,7 +10,7 @@
 
 ### Added
 
-* Added `chrono` v0.4 integration.
+* Added `chrono` v0.4 integration (31f6771961a60834643ee356b6a0cead6fa45677).
     + Enabled by `chrono04` feature.
     + Note that some conversions are lossy (truncates subnanosecond for example).
     + `common::Hms6ColonStr{,ing}` and `chrono::NaiveTime`
