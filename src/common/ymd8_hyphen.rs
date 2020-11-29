@@ -62,7 +62,7 @@ fn validate_bytes(s: &[u8]) -> Result<(), Error> {
     }
 
     let month1 = parse_digits2(month_s);
-    if (month1 < 1) || (month1 > 12) {
+    if !(1..=12).contains(&month1) {
         return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Month).into());
     }
     let mday = parse_digits2(mday_s);
@@ -1310,7 +1310,7 @@ impl TryFrom<&chrono04::NaiveDate> for Ymd8HyphenString {
         use chrono04::Datelike;
 
         let year = v.year();
-        if (year < 0) || (year > 9999) {
+        if (0..=9999).contains(&year) {
             return Err(ErrorKind::ComponentOutOfRange(ComponentKind::Year).into());
         }
         Ok(
